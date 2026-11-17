@@ -1,20 +1,8 @@
-// El store: un unico objeto con todo el estado global. Cada reducer es una "rama" del arbol.
-// La sesion ya no vive aca: la maneja useSession() de Better Auth (ver lib/auth-client.ts).
 import { configureStore } from "@reduxjs/toolkit";
-import { useDispatch, useSelector } from "react-redux";
-import { studentsApi } from "./api";
+import { moviesApi } from "./api";
 
+// Better Auth administra la sesión; Redux conserva los datos del catálogo.
 export const store = configureStore({
-  reducer: {
-    [studentsApi.reducerPath]: studentsApi.reducer, // state.studentsApi -> cache de RTK Query
-  },
-  // El middleware de RTK Query maneja la cache, el refetch y la invalidacion por tags.
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(studentsApi.middleware),
+  reducer: { [moviesApi.reducerPath]: moviesApi.reducer },
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(moviesApi.middleware),
 });
-
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
-
-// useSelector / useDispatch ya tipados con nuestro store.
-export const useAppSelector = useSelector.withTypes<RootState>();
-export const useAppDispatch = useDispatch.withTypes<AppDispatch>();

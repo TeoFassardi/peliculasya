@@ -1,46 +1,68 @@
-// Layout generico: header con logout. Se monta una sola vez, al navegar solo cambia lo que renderiza <Outlet />.
-import { Link, Outlet } from "react-router";
+import { useState } from "react";
+import { Link, NavLink, Outlet } from "react-router";
 import { signOut, useSession } from "../lib/auth-client";
 
-export const Layout = () => {
-  const { data: session } = useSession();
-  const user = session?.user;
-  // signOut borra la sesion EN LA BASE (no solo la cookie).
-  // Recarga completa en vez de navigate(): useSession refresca async, y con navigate() el Login
-  // todavia ve la sesion vieja en cache y rebota a /home. La recarga tambien limpia el cache de RTK Query.
-  const handleLogout = async () => {
-    const { error } = await signOut();
-    if (error) {
-      alert(error.message ?? "No se pudo cerrar sesion");
-      return;
+export function Layout() {
+  const { data: session, isPending } = useSession();
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
+
+  async function logout() {
+    setLoggingOut(true);
+    setLogoutError("");
+    try {
+      const { error } = await signOut();
+      if (error) {
+        setLogoutError("No pudimos cerrar la sesión. Volvé a intentar.");
+        return;
+      }
+      window.location.replace("/");
+    } catch {
+      setLogoutError("No pudimos conectar. Volvé a intentar.");
+    } finally {
+      setLoggingOut(false);
     }
-    window.location.replace("/login");
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
-      <header className="bg-brand-600 px-6 py-4 text-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold">Estudiantes</h1>
-          {user && (
-            <nav className="flex items-center gap-2">
-              <Link to="/chat" className="rounded px-3 py-1.5 text-sm hover:bg-white/10">
-                Asistente
-              </Link>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="rounded px-3 py-1.5 text-sm hover:bg-white/10"
-              >
-                Salir ({user.name})
-              </button>
-            </nav>
-          )}
+    <div className="app-shell">
+      <a className="skip-link" href="#main-content">
+        Saltar al contenido
+      </a>
+      <header className="site-header">
+        <div className="header-inner">
+          <Link className="brand" to="/" aria-label="PeliculasYa, inicio">
+            Peliculas<span>Ya</span>
+            <span className="brand-dot" aria-hidden="true" />
+          </Link>
+          <nav aria-label="Navegación principal">
+            <NavLink to="/" end>
+              Catálogo
+            </NavLink>
+            {session?.user.role === "admin" && <NavLink to="/admin">Administrar</NavLink>}
+            {!isPending &&
+              (session ? (
+                <button className="nav-button" onClick={logout} disabled={loggingOut}>
+                  {loggingOut ? "Saliendo…" : `Salir (${session.user.name})`}
+                </button>
+              ) : (
+                <NavLink to="/login">Ingresar</NavLink>
+              ))}
+          </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl p-6">
+      <main id="main-content" className="main-content">
+        {logoutError && (
+          <p className="field-error" role="alert">
+            {logoutError}
+          </p>
+        )}
         <Outlet />
       </main>
+      <footer className="site-footer">
+        <span>PeliculasYa</span>
+        <p>Historias para descubrir.</p>
+      </footer>
     </div>
   );
-};
+}

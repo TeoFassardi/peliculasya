@@ -1,29 +1,78 @@
-// Page: ruta publica "/home". Los datos salen de la cache de RTK Query: sin useEffect ni useState.
-import { getErrorMessage } from "../lib/api";
-import { useGetStudentsQuery } from "../store/api";
-import { StudentCard } from "../components/StudentCard";
+import { Link } from "react-router";
+import { useGetMoviesQuery } from "../store/api";
+import { useCatalogParams } from "../hooks/useCatalogParams";
+import { MovieCard } from "../components/MovieCard";
+import { CatalogSearch } from "../components/CatalogSearch";
+import { Pagination } from "../components/Pagination";
+import { Feedback } from "../components/Feedback";
 
-export const Home = () => {
-  // Si Admin ya pidio el listado, sale de la cache al instante (mismo endpoint, mismos argumentos).
-  const { data: students = [], isLoading, error } = useGetStudentsQuery();
-
-  if (isLoading) {
-    return <p className="text-slate-500">Cargando estudiantes...</p>;
-  }
-
-  if (error) {
-    return <p className="text-red-600">No se pudieron cargar los estudiantes: {getErrorMessage(error)}</p>;
-  }
-
-  if (students.length === 0) {
-    return <p className="text-slate-500">Todavia no hay estudiantes cargados.</p>;
-  }
+export function Home() {
+  const { search, page, setSearch, setPage } = useCatalogParams();
+  const { currentData: result, isFetching, error, refetch } = useGetMoviesQuery({ search, page });
 
   return (
-    <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {students.map((student) => (
-        <StudentCard key={student._id} student={student} />
-      ))}
-    </section>
+    <>
+      <section className="catalog-intro">
+        <h1>
+          Una buena película
+          <br />
+          empieza por elegirla.
+        </h1>
+        <p>Explorá historias, descubrí otros géneros y encontrá tu próxima película.</p>
+      </section>
+
+      <section aria-label="Catálogo de películas">
+        <div className="catalog-toolbar">
+          <CatalogSearch key={search} initialSearch={search} onSearch={setSearch} />
+          {result && (
+            <p className="muted" aria-live="polite">
+              {result.meta.total} películas{search ? ` para “${search}”` : " en el catálogo"}
+            </p>
+          )}
+        </div>
+
+        {isFetching && !result && <Feedback title="Cargando películas…" />}
+        {error && (
+          <Feedback title="No pudimos cargar el catálogo" error>
+            <p>{String(error)}</p>
+            <button className="button secondary" onClick={() => refetch()}>
+              Reintentar
+            </button>
+          </Feedback>
+        )}
+        {!error && result && result.data.length === 0 && (
+          <Feedback
+            title={search ? "No encontramos ese título" : "Todavía no hay películas en esta página"}
+          >
+            <p>
+              {search
+                ? "Probá con otro título o volvé al catálogo completo."
+                : "El administrador puede cargar nuevas películas."}
+            </p>
+            {(search || page > 1) && (
+              <Link className="button secondary" to="/">
+                Ver catálogo completo
+              </Link>
+            )}
+          </Feedback>
+        )}
+
+        {!error && result && (
+          <>
+            <div className="movie-grid" aria-busy={isFetching}>
+              {result.data.map((movie) => (
+                <MovieCard key={movie._id} movie={movie} />
+              ))}
+            </div>
+            <Pagination
+              page={page}
+              totalPages={result.meta.totalPages}
+              onChange={setPage}
+              disabled={isFetching}
+            />
+          </>
+        )}
+      </section>
+    </>
   );
-};
+}

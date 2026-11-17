@@ -1,88 +1,126 @@
 import { useState } from "react";
-import { getErrorMessage } from "../lib/api";
-import type { StudentFormValues } from "../schemas/student.schema";
+import type { Movie } from "../types/movie";
+import type { MovieFormValues } from "../schemas/movie.schema";
 import {
-  useCreateStudentMutation,
-  useDeleteStudentMutation,
-  useGetStudentsQuery,
-  useUpdateStudentMutation,
+  useGetMoviesQuery,
+  useCreateMovieMutation,
+  useUpdateMovieMutation,
+  useDeleteMovieMutation,
 } from "../store/api";
-import type { Student } from "../types/student";
-import { StudentForm } from "../components/admin/StudentForm";
+import { MovieForm } from "../components/admin/MovieForm";
+import { MovieTable } from "../components/admin/MovieTable";
+import { CatalogSearch } from "../components/CatalogSearch";
+import { Pagination } from "../components/Pagination";
+import { Feedback } from "../components/Feedback";
+import { useCatalogParams } from "../hooks/useCatalogParams";
+import { getErrorMessage } from "../lib/api";
 
-export const Admin = () => {
-  const { data: students = [], error: loadError } = useGetStudentsQuery();
-  const [createStudent] = useCreateStudentMutation();
-  const [updateStudent] = useUpdateStudentMutation();
-  const [deleteStudent, { error: deleteError }] = useDeleteStudentMutation();
-  // Estado de UI de esta pantalla: no es global, se queda en useState.
-  const [editing, setEditing] = useState<Student | null>(null);
+export function Admin() {
+  const { search, page, setSearch, setPage } = useCatalogParams();
+  const { currentData: result, isFetching, error, refetch } = useGetMoviesQuery({ search, page });
+  const [createMovie] = useCreateMovieMutation();
+  const [updateMovie] = useUpdateMovieMutation();
+  const [deleteMovie, { isLoading: deleting }] = useDeleteMovieMutation();
+  const [editor, setEditor] = useState<{ movie: Movie | null } | null>(null);
+  const [notice, setNotice] = useState("");
+  const [deleteError, setDeleteError] = useState("");
 
-  // Ya no se actualiza el listado a mano (map / spread / filter): cada mutation invalida el tag
-  // "Students" y RTK Query vuelve a pedir el listado. unwrap() lanza el error para que lo muestre el form.
-  const handleSave = async (values: StudentFormValues) => {
-    if (editing) {
-      await updateStudent({ id: editing._id, values }).unwrap();
-      setEditing(null);
+  async function save(values: MovieFormValues) {
+    if (editor?.movie) {
+      await updateMovie({ id: editor.movie._id, values }).unwrap();
     } else {
-      await createStudent(values).unwrap();
+      await createMovie(values).unwrap();
     }
-  };
+    setEditor(null);
+    setNotice("Película guardada.");
+  }
 
-  const handleDelete = async (student: Student) => {
-    if (!window.confirm(`¿Eliminar a ${student.firstName} ${student.lastName}?`)) return;
-    // Sin unwrap: si falla, el error queda en `deleteError` y se muestra abajo.
-    const result = await deleteStudent(student._id);
-    if (!result.error && editing?._id === student._id) setEditing(null);
-  };
+  async function remove(movie: Movie) {
+    if (!window.confirm(`¿Eliminar “${movie.title}”? Esta acción no se puede deshacer.`)) return;
+    setDeleteError("");
+    setNotice("");
 
-  const error = loadError ?? deleteError;
+    try {
+      await deleteMovie(movie._id).unwrap();
+      if (editor?.movie?._id === movie._id) setEditor(null);
+      if (result?.data.length === 1 && page > 1) setPage(page - 1);
+      setNotice("Película eliminada.");
+    } catch (failure) {
+      setDeleteError(getErrorMessage(failure));
+    }
+  }
 
   return (
-    <section className="flex flex-col gap-6">
-      <h2 className="text-xl font-semibold text-slate-900">Panel de administracion</h2>
-
-      <StudentForm student={editing} onSave={handleSave} onCancel={() => setEditing(null)} />
-
-      {error && (
-        <p role="alert" className="text-sm text-red-600">
-          {getErrorMessage(error)}
+    <>
+      <div className="page-heading">
+        <div>
+          <h1>Administrar catálogo</h1>
+          <p className="muted">Agregá historias y mantené sus datos al día.</p>
+        </div>
+        <button
+          className="button"
+          onClick={() => {
+            setEditor({ movie: null });
+            setNotice("");
+          }}
+        >
+          Agregar película
+        </button>
+      </div>
+      <p role="status" className="notice">
+        {notice}
+      </p>
+      {deleteError && (
+        <p className="field-error" role="alert">
+          {deleteError}
         </p>
       )}
 
-      <ul className="divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white shadow-sm">
-        {students.map((student) => (
-          <li key={student._id} className="flex items-center justify-between gap-4 px-4 py-3">
-            <div>
-              <p className="font-medium text-slate-900">
-                {student.lastName}, {student.firstName}
-              </p>
-              <p className="text-sm text-slate-500">
-                {student.email} · {student.career} · {student.active ? "Activo" : "Inactivo"}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setEditing(student)}
-                className="rounded border border-slate-300 px-3 py-1 text-sm hover:bg-slate-100"
-              >
-                Editar
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(student)}
-                className="rounded border border-red-300 px-3 py-1 text-sm text-red-700 hover:bg-red-50"
-              >
-                Eliminar
-              </button>
-            </div>
-          </li>
-        ))}
-        {students.length === 0 && (
-          <li className="px-4 py-3 text-sm text-slate-500">Todavia no hay estudiantes cargados.</li>
-        )}
-      </ul>
-    </section>
+      {editor && (
+        <MovieForm
+          key={editor.movie?._id ?? "new"}
+          movie={editor.movie}
+          onSave={save}
+          onCancel={() => setEditor(null)}
+        />
+      )}
+
+      <CatalogSearch key={search} initialSearch={search} onSearch={setSearch} />
+      {isFetching && !result && <Feedback title="Cargando películas…" />}
+      {error && (
+        <Feedback title="No pudimos cargar las películas" error>
+          <p>{String(error)}</p>
+          <button className="button secondary" onClick={() => refetch()}>
+            Reintentar
+          </button>
+        </Feedback>
+      )}
+      {!error && result && (
+        <>
+          {result.data.length > 0 ? (
+            <MovieTable
+              movies={result.data}
+              busy={deleting}
+              onEdit={(movie) => {
+                setEditor({ movie });
+                setNotice("");
+                window.scrollTo({ top: 0 });
+              }}
+              onDelete={remove}
+            />
+          ) : (
+            <Feedback title="No hay películas en esta página">
+              <p>Agregá una película o cambiá la búsqueda.</p>
+            </Feedback>
+          )}
+          <Pagination
+            page={page}
+            totalPages={result.meta.totalPages}
+            onChange={setPage}
+            disabled={isFetching || deleting}
+          />
+        </>
+      )}
+    </>
   );
-};
+}

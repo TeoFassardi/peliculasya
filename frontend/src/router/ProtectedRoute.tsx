@@ -13,7 +13,7 @@ export const ProtectedRoute = ({ roles, redirectTo = "/home" }: ProtectedRoutePr
   const location = useLocation();
 
   if (isPending) {
-    return <p className="text-slate-500">Verificando sesion...</p>;
+    return <p role="status">Verificando sesión…</p>;
   }
 
   if (!session) {
