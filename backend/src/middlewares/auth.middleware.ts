@@ -5,7 +5,11 @@ import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "../lib/auth.js";
 import { UserRole } from "../types/auth.types.js";
 
-export async function authMiddleware(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function authMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     const session = await auth.api.getSession({ headers: fromNodeHeaders(req.headers) });
 
@@ -31,7 +35,12 @@ export function requireRole(...rolesPermitidos: UserRole[]) {
     }
 
     if (!rolesPermitidos.includes(req.user.role as UserRole)) {
-      res.status(403).json({ success: false, error: { message: "No tenes permisos para realizar esta accion" } });
+      res
+        .status(403)
+        .json({
+          success: false,
+          error: { message: "No tenes permisos para realizar esta accion" },
+        });
       return;
     }
 

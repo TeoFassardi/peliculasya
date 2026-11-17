@@ -7,19 +7,24 @@ import { MongoClient } from "mongodb";
 
 function requireEnv(name: string): string {
   const value = process.env[name];
-  if (!value) throw new Error(`Missing ${name} environment variable. Check your .env file (see .env.example).`);
+  if (!value)
+    throw new Error(
+      `Missing ${name} environment variable. Check your .env file (see .env.example).`,
+    );
   return value;
 }
 
 // Better Auth usa el driver nativo de Mongo (mongoose lo trae como dependencia).
 // El cliente conecta solo en la primera consulta. Pasarlo como `client` habilita transacciones (Atlas = replica set).
-const client = new MongoClient(requireEnv("MONGODB_URI"));
+export const authMongoClient = new MongoClient(requireEnv("MONGODB_URI"));
 
 export const auth = betterAuth({
   // URL publica que ve el navegador: la del FRONT, porque /api llega al back a traves del proxy.
   // El secret se lee solo de BETTER_AUTH_SECRET.
   baseURL: requireEnv("BETTER_AUTH_URL"),
-  database: mongodbAdapter(client.db(), { client }),
+  secret: requireEnv("BETTER_AUTH_SECRET"),
+  trustedOrigins: [requireEnv("BETTER_AUTH_URL")],
+  database: mongodbAdapter(authMongoClient.db(), { client: authMongoClient }),
   emailAndPassword: {
     enabled: true, // hashea con scrypt; minimo 8 caracteres por defecto
   },
@@ -35,5 +40,5 @@ export const auth = betterAuth({
     accountLinking: { trustedProviders: ["github"] },
   },
   // admin(): agrega user.role ("user" por defecto) y endpoints para listar usuarios y revocar sesiones.
-  plugins: [admin()],
+  plugins: [admin({ defaultRole: "user" })],
 });

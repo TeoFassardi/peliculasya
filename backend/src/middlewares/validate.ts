@@ -12,6 +12,7 @@ export function validateBody(schema: ZodSchema) {
         error: {
           message: "Los datos enviados no son validos",
           details: result.error.flatten().fieldErrors,
+          formErrors: result.error.flatten().formErrors,
         },
       });
       return;

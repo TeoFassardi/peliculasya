@@ -5,7 +5,7 @@ function getMongoUri(): string {
 
   if (!uri) {
     throw new Error(
-      "Missing MONGODB_URI environment variable. Check your .env file (see .env.example)."
+      "Missing MONGODB_URI environment variable. Check your .env file (see .env.example).",
     );
   }
 
