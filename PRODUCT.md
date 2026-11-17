@@ -15,6 +15,7 @@ Proyecto académico full stack. Los visitantes y usuarios registrados consultan 
 - Backend y frontend separados en Render, con API bajo el mismo origen del frontend.
 - Interfaz en español, estética de cine oscuro y adaptación a celulares.
 - Código legible separado por responsabilidad; trabajo por etapas explicadas.
+- Conservar los apuntes y el ejemplo original de la materia: clases en la raíz y código original en referencia-materia/. PeliculasYa agrega su implementación en backend/ y frontend/ sin borrar ese material de referencia.
 
 ## Estado externo
 Pendiente crear o conectar Atlas, Render y el repositorio propio en GitHub. No se afirman URLs ni autenticación OAuth en producción hasta verificarlas.
