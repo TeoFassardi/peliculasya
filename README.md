@@ -1,6 +1,6 @@
 # PeliculasYa — TP2 Full Stack
 
-Catálogo de películas desarrollado para Programación Web Full Stack. Los visitantes consultan el listado y el detalle; los administradores crean, editan y eliminan películas. Incluye registro, login por email y GitHub, sesión persistente y roles user/admin. Cada cuenta tiene una lista privada con películas, notas y estado de visualización. Incluye búsqueda, paginación y un panel de administración de roles. El soporte de Google está implementado y requiere configurar sus credenciales OAuth para habilitar el ingreso real.
+Catálogo de películas desarrollado para Programación Web Full Stack. Los visitantes consultan el listado y el detalle; los administradores crean, editan y eliminan películas. Incluye registro, login por email, GitHub y Google, sesión persistente y roles user/admin. Cada cuenta tiene una lista privada con películas, notas y estado de visualización. Incluye búsqueda, filtros, paginación y un panel de administración de roles. GitHub y Google están configurados y su ingreso real fue confirmado en producción.
 
 ## Entrega
 
@@ -126,10 +126,10 @@ Errores: `400` por datos, fecha, parámetros o identificador inválidos; `401` s
 
 ## Opcionales y registros privados
 
-- **Búsqueda y paginación:** catálogo público por título y páginas; búsqueda por email y páginas en el panel de cuentas.
+- **Búsqueda, filtros y paginación:** catálogo público con búsqueda por título y páginas de 12 películas; filtros por estado y paginación en Mi lista; búsqueda por email y páginas de 10 cuentas en el panel de usuarios. Los controles de paginación aparecen cuando hay más de una página.
 - **Registros propios:** `/mi-lista` permite guardar películas desde su detalle, marcarlas como vistas, escribir notas privadas de hasta 500 caracteres, filtrar por estado y quitarlas. El propietario se obtiene de la sesión; no se acepta del cliente. Cada lectura, edición y eliminación se limita a esa cuenta, incluso si otra cuenta es admin. Un acceso a un registro ajeno devuelve 404. El catálogo sigue siendo público y solo admin puede modificar películas.
 - **Roles:** `/admin/usuarios` permite promover y quitar permisos a otras cuentas. Un usuario común no puede entrar a la pantalla ni llamar a los endpoints de administración. El nuevo rol se consulta desde las sesiones existentes; el backend conserva la autoridad sobre cada operación.
-- **Google:** proveedor implementado y probado con credenciales ficticias en una base temporal. El ingreso real requiere completar la configuración siguiente; no se considera verificado en producción hasta autorizar una cuenta real.
+- **Google:** configurado en Render con credenciales de producción. Se verificaron la habilitación del proveedor, el inicio de OAuth y el callback de producción; el usuario confirmó el ingreso completo con una cuenta real. Las pruebas automatizadas usan credenciales ficticias y no acceden a cuentas reales de Google.
 
 Para la API de Mi lista, `POST` recibe `{ "movieId": "identificador-de-pelicula" }`; `PATCH` recibe uno o ambos campos: `{ "watched": true, "note": "Mi comentario privado" }`. Un índice único por cuenta y película evita duplicados (409). El listado admite `page`, `limit`, `status=all|pending|watched` y `movieId` opcional. Si una película desaparece del catálogo, su registro muestra “Película retirada del catálogo”; el propietario puede conservar su nota o quitarla.
 
@@ -193,10 +193,10 @@ $env:MONGOMS_SYSTEM_BINARY_VERSION_CHECK = 'false'
 
 Ajustar la ruta a la instalación del equipo. Para las pruebas de navegador, ejecutar `npx playwright install chromium` desde `frontend/` antes de `npm run test:e2e`. Como alternativa, usar Microsoft Edge instalado con `$env:PLAYWRIGHT_CHANNEL = 'msedge'`. Los puertos 3000 y 5173 deben estar libres. Estas pruebas inician backend y frontend temporales y los cierran al terminar. Las capturas de 375, 768 y 1440px se generan en `frontend/test-results/` y no se versionan.
 
-Durante el desarrollo pasaron los builds, lint, nueve pruebas de integración y seis de navegador. Las pruebas adicionales cubren el aislamiento de listas entre cuentas, validación de notas, duplicados, autorización y cambio de roles, y el inicio de Google OAuth con callback local. La autorización real en Google queda pendiente de credenciales. En producción, el usuario confirmó login con GitHub, sesión tras F5, ABM del administrador y acceso denegado al usuario común antes de agregar estos opcionales.
+Durante el desarrollo pasaron los builds, lint, nueve pruebas de integración y seis de navegador. Las pruebas adicionales cubren el aislamiento de listas entre cuentas, validación de notas, duplicados, autorización y cambio de roles, y el inicio de Google OAuth con callback local. En producción, el usuario confirmó login con GitHub, sesión tras F5, ABM del administrador, acceso denegado al usuario común y, tras configurar Google, el ingreso completo con una cuenta real de ese proveedor.
 
 El 18 de noviembre de 2026 se verificó además con navegador automático en producción: catálogo y búsqueda, detalle con F5, registro con rol user, sesión tras F5 y logout, cuentas de prueba, rechazo 403 de escrituras para user, ABM admin, validación, cancelar sin guardar y confirmación de borrado. Se comprobó `/api` bajo el origen del frontend, paginación de la API y ausencia de desborde horizontal a 375, 768 y 1440px. Los registros temporales de verificación se eliminaron.
 
-Después de publicar los opcionales se verificaron en producción: listado de cuentas autorizado para admin y rechazado para user, protección contra quitarse el rol propio, y creación, edición y filtrado de registros privados. Otra cuenta admin no pudo consultar ni editar el registro del propietario. Se eliminaron las películas, registros y sesiones temporales de esa comprobación. Google permanece deshabilitado hasta cargar sus credenciales reales; solo su flujo de inicio y recuperación de errores se probó en el entorno aislado.
+Después de publicar los opcionales se verificaron en producción: listado de cuentas autorizado para admin y rechazado para user, protección contra quitarse el rol propio, y creación, edición y filtrado de registros privados. Otra cuenta admin no pudo consultar ni editar el registro del propietario. Se eliminaron las películas, registros y sesiones temporales de esa comprobación. Google está habilitado y su callback apunta a `https://peliculasya.onrender.com/api/auth/callback/google`.
 
 No se deben versionar archivos `.env` ni credenciales de infraestructura. Las contraseñas publicadas arriba corresponden solamente a cuentas de demostración para la corrección.
