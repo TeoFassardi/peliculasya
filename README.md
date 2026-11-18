@@ -29,7 +29,7 @@ referencia-materia/   Ejemplo original de la materia
 clase N/              Apuntes originales
 ```
 
-Basado en el [repositorio de la materia](https://github.com/T-Arias/mdw-2026). El README anterior se conserva íntegro en [README-MATERIA.md](README-MATERIA.md). La guía ampliada está en [PELICULASYA.md](PELICULASYA.md).
+Basado en el [repositorio de la materia](https://github.com/T-Arias/mdw-2026). Los apuntes y el ejemplo original se conservan en `clase N/` y `referencia-materia/`. La guía ampliada está en [PELICULASYA.md](PELICULASYA.md).
 
 ## Usuarios de prueba
 
