@@ -1,6 +1,6 @@
 # PeliculasYa — TP2 Full Stack
 
-Catálogo de películas desarrollado para Programación Web Full Stack. Los visitantes consultan el listado y el detalle; los administradores crean, editan y eliminan películas. Incluye registro, login por email y GitHub, sesión persistente y roles user/admin. Opcionales implementados: búsqueda por título y paginación.
+Catálogo de películas desarrollado para Programación Web Full Stack. Los visitantes consultan el listado y el detalle; los administradores crean, editan y eliminan películas. Incluye registro, login por email y GitHub, sesión persistente y roles user/admin. Cada cuenta tiene una lista privada con películas, notas y estado de visualización. Incluye búsqueda, paginación y un panel de administración de roles. El soporte de Google está implementado y requiere configurar sus credenciales OAuth para habilitar el ingreso real.
 
 ## Entrega
 
@@ -72,6 +72,8 @@ El frontend no requiere `.env` ni una URL absoluta de la API. Las contraseñas s
 | `BETTER_AUTH_SECRET` | Secreto aleatorio; diferente en local y producción |
 | `GITHUB_CLIENT_ID` | Client ID de la OAuth App del entorno |
 | `GITHUB_CLIENT_SECRET` | Client Secret de esa OAuth App |
+| `GOOGLE_CLIENT_ID` | Client ID de Google; opcional, habilita Google junto con su secret |
+| `GOOGLE_CLIENT_SECRET` | Client Secret de Google; dejar ambas variables vacías si no se configura |
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | Cuenta admin de corrección; solo las usa el seed |
 | `SEED_USER_EMAIL`, `SEED_USER_PASSWORD` | Cuenta común de corrección; solo las usa el seed |
 
@@ -91,8 +93,16 @@ El frontend no requiere `.env` ni una URL absoluta de la API. Las contraseñas s
 | GET | `/api/auth/callback/github` | Flujo OAuth | Callback administrado por Better Auth |
 | GET | `/api/auth/get-session` | Sesión opcional | Sesión actual o null |
 | POST | `/api/auth/sign-out` | Sesión | Cierre de sesión |
+| GET | `/api/config` | Público | Configuración pública: indica si Google está habilitado |
+| GET | `/api/watchlist` | user o admin | Solo los registros de la cuenta autenticada, `{ data, meta }` |
+| POST | `/api/watchlist` | user o admin | 201, guarda una película en la lista propia |
+| PATCH | `/api/watchlist/:id` | Propietario autenticado | 200, cambia nota o estado de visualización |
+| DELETE | `/api/watchlist/:id` | Propietario autenticado | 204, quita un registro de la lista propia |
+| GET | `/api/auth/admin/list-users` | admin | Cuentas con búsqueda y paginación |
+| POST | `/api/auth/admin/set-role` | admin | Cambia el rol de otra cuenta a user o admin |
+| GET | `/api/auth/callback/google` | Flujo OAuth | Callback de Google; requiere proveedor configurado |
 
-Las escrituras de películas exigen `authMiddleware` y `requireRole("admin")`. Los endpoints adicionales del plugin admin de Better Auth mantienen sus propios controles de acceso. El panel visual no permite cambiar roles.
+Las escrituras de películas exigen `authMiddleware` y `requireRole("admin")`. Los endpoints del plugin admin de Better Auth mantienen sus propios controles de acceso. El panel `/admin/usuarios` usa `authClient.admin.listUsers` y `authClient.admin.setRole`, pide confirmación antes de cambiar un rol e impide que un administrador se quite su propio acceso. Esta última restricción también se valida en el servidor; solo se admiten los roles user y admin.
 
 Listado con búsqueda y paginación: `GET /api/movies?search=viaje&page=1&limit=12`. Busca por título sin distinguir mayúsculas y trata los caracteres especiales como texto literal. La página inicial es 1 y el límite predeterminado es 12 (máximo 100). El orden es creación descendente, con identificador como desempate.
 
@@ -113,6 +123,31 @@ Ejemplo de cuerpo para crear una película:
 Géneros: Acción, Comedia, Drama, Terror, Ciencia ficción, Animación, Documental, Aventura, Suspenso y Romance. Duración: entero entre 1 y 600. Fecha: `YYYY-MM-DD`. El afiche puede omitirse, quedar vacío o ser HTTPS. En `PATCH` enviar uno o más campos; los campos ausentes conservan su valor. Un título puede repetirse.
 
 Errores: `400` por datos, fecha, parámetros o identificador inválidos; `401` sin sesión; `403` sin rol; `404` si no existe; `500` ante fallos internos. Los errores propios usan `{ "error": { "message": "..." } }`; la validación de formularios agrega `details` por campo y `formErrors`. Better Auth conserva su formato de errores.
+
+## Opcionales y registros privados
+
+- **Búsqueda y paginación:** catálogo público por título y páginas; búsqueda por email y páginas en el panel de cuentas.
+- **Registros propios:** `/mi-lista` permite guardar películas desde su detalle, marcarlas como vistas, escribir notas privadas de hasta 500 caracteres, filtrar por estado y quitarlas. El propietario se obtiene de la sesión; no se acepta del cliente. Cada lectura, edición y eliminación se limita a esa cuenta, incluso si otra cuenta es admin. Un acceso a un registro ajeno devuelve 404. El catálogo sigue siendo público y solo admin puede modificar películas.
+- **Roles:** `/admin/usuarios` permite promover y quitar permisos a otras cuentas. Un usuario común no puede entrar a la pantalla ni llamar a los endpoints de administración. El nuevo rol se consulta desde las sesiones existentes; el backend conserva la autoridad sobre cada operación.
+- **Google:** proveedor implementado y probado con credenciales ficticias en una base temporal. El ingreso real requiere completar la configuración siguiente; no se considera verificado en producción hasta autorizar una cuenta real.
+
+Para la API de Mi lista, `POST` recibe `{ "movieId": "identificador-de-pelicula" }`; `PATCH` recibe uno o ambos campos: `{ "watched": true, "note": "Mi comentario privado" }`. Un índice único por cuenta y película evita duplicados (409). El listado admite `page`, `limit`, `status=all|pending|watched` y `movieId` opcional. Si una película desaparece del catálogo, su registro muestra “Película retirada del catálogo”; el propietario puede conservar su nota o quitarla.
+
+## Habilitar Google
+
+1. En [Google Cloud Console](https://console.cloud.google.com/), crear o seleccionar un proyecto. Abrir **Google Auth Platform** y completar **Branding** (nombre PeliculasYa y emails de contacto) y **Audience**. Para una cuenta personal, elegir audiencia externa; si la app está en pruebas, agregar las cuentas autorizadas como usuarios de prueba.
+2. En **Clients → Create client**, elegir **Web application**. Crear clientes separados para local y producción, con estas direcciones de retorno:
+
+   | Entorno | Origen de la aplicación | Authorized redirect URI |
+   | --- | --- | --- |
+   | Local | `http://localhost:5173` | `http://localhost:5173/api/auth/callback/google` |
+   | Producción | `https://peliculasya.onrender.com` | `https://peliculasya.onrender.com/api/auth/callback/google` |
+
+3. Guardar el Client ID y el Client Secret locales en `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` de `backend/.env`. Cargar los de producción en **Environment** del backend en Render. No reemplazar las variables de GitHub ni publicar estos valores.
+4. Reiniciar el backend local y volver a desplegar el backend de Render. El frontend consulta `/api/config` y muestra “Ingresar con Google” cuando ambas variables están completas. Sin credenciales, email y GitHub siguen funcionando. Configurar solo una variable detiene el inicio con un mensaje claro.
+5. Probar ingreso, cancelación, logout y F5 con una cuenta real. Las URI deben coincidir exactamente con las registradas en Google. Solo se utilizan los permisos de identidad básicos del proveedor.
+
+Referencia: [Google: credenciales y direcciones de retorno de OAuth](https://developers.google.com/identity/protocols/oauth2/web-server#creatingcred).
 
 ## Configuración de Render
 
@@ -158,7 +193,7 @@ $env:MONGOMS_SYSTEM_BINARY_VERSION_CHECK = 'false'
 
 Ajustar la ruta a la instalación del equipo. Para las pruebas de navegador, ejecutar `npx playwright install chromium` desde `frontend/` antes de `npm run test:e2e`. Como alternativa, usar Microsoft Edge instalado con `$env:PLAYWRIGHT_CHANNEL = 'msedge'`. Los puertos 3000 y 5173 deben estar libres. Estas pruebas inician backend y frontend temporales y los cierran al terminar. Las capturas de 375, 768 y 1440px se generan en `frontend/test-results/` y no se versionan.
 
-Durante el desarrollo pasaron los builds, lint, seis pruebas de integración y tres de navegador. En producción, el usuario confirmó login con GitHub, sesión tras F5, ABM del administrador y acceso denegado al usuario común.
+Durante el desarrollo pasaron los builds, lint, nueve pruebas de integración y seis de navegador. Las pruebas adicionales cubren el aislamiento de listas entre cuentas, validación de notas, duplicados, autorización y cambio de roles, y el inicio de Google OAuth con callback local. La autorización real en Google queda pendiente de credenciales. En producción, el usuario confirmó login con GitHub, sesión tras F5, ABM del administrador y acceso denegado al usuario común antes de agregar estos opcionales.
 
 El 18 de noviembre de 2026 se verificó además con navegador automático en producción: catálogo y búsqueda, detalle con F5, registro con rol user, sesión tras F5 y logout, cuentas de prueba, rechazo 403 de escrituras para user, ABM admin, validación, cancelar sin guardar y confirmación de borrado. Se comprobó `/api` bajo el origen del frontend, paginación de la API y ausencia de desborde horizontal a 375, 768 y 1440px. Los registros temporales de verificación se eliminaron.
 
