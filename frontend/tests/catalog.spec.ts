@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import path from "node:path";
 
 async function login(page: Page, role: "admin" | "user") {
   await page.goto("/login");
@@ -118,7 +119,9 @@ test("admin cambia roles con confirmación y conserva su propio acceso", async (
   request,
 }) => {
   const consoleErrors: string[] = [];
-  page.on("console", message => { if (message.type() === "error") consoleErrors.push(message.text()); });
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
   const email = `roles-${Date.now()}@peliculasya.test`;
   const registered = await request.post("http://localhost:5173/api/auth/sign-up/email", {
     headers: { Origin: "http://localhost:5173" },
@@ -178,4 +181,121 @@ test("Google inicia OAuth y el callback fallido muestra una recuperación clara"
   );
   await page.goto("/login?error=access_denied");
   await expect(page.getByRole("alert")).toContainText("No se pudo completar el ingreso");
+});
+
+test("afiches en catálogo, detalle, Mi lista y ABM; subir, reemplazar y quitar imagen", async ({
+  page,
+}) => {
+  await login(page, "admin");
+  await page.goto("/admin");
+  await page.getByRole("button", { name: "Agregar película", exact: true }).click();
+  await page.getByLabel("Título", { exact: true }).fill("Historia con afiche");
+  await page
+    .getByLabel("Sinopsis", { exact: true })
+    .fill("Película temporal para verificar imágenes.");
+  await page.getByLabel("Género", { exact: true }).selectOption("Drama");
+  await page.getByLabel("Duración (minutos)").fill("100");
+  await page.getByLabel("Fecha de estreno").fill("2024-06-15");
+  const fileInput = page.getByLabel("Subir desde tu equipo", { exact: true });
+  await fileInput.setInputFiles({
+    name: "no-es-imagen.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("no es una imagen"),
+  });
+  await expect(page.getByRole("alert")).toContainText("JPG, PNG o WebP");
+  await fileInput.focus();
+  await fileInput.setInputFiles(path.resolve("public/posters/interestelar.jpg"));
+  const preview = page.locator(".poster-preview img");
+  await expect(preview).toHaveAttribute("src", /^data:image\/jpeg;base64,/);
+  await expect
+    .poll(() => preview.evaluate((image) => (image as HTMLImageElement).naturalWidth))
+    .toBeGreaterThan(0);
+  await expect(fileInput).toBeFocused();
+  // Una captura PNG sirve como archivo real para verificar su conversión a JPEG.
+  const png = await page.locator(".poster-preview").screenshot();
+  await fileInput.setInputFiles({ name: "afiche.png", mimeType: "image/png", buffer: png });
+  await expect(page.getByRole("button", { name: "Guardar película", exact: true })).toBeEnabled();
+  await expect(fileInput).toBeFocused();
+  await expect(preview).toHaveAttribute("src", /^data:image\/jpeg;base64,/);
+  await expect
+    .poll(() => preview.evaluate((image) => (image as HTMLImageElement).naturalWidth))
+    .toBeGreaterThan(0);
+  for (const width of [375, 768, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect(page.locator(".skip-link")).not.toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await page.screenshot({ path: `test-results/poster-form-${width}.png`, fullPage: true });
+  }
+  await page.getByRole("button", { name: "Guardar película", exact: true }).click();
+  const row = page.getByRole("row").filter({ hasText: "Historia con afiche" });
+  await expect(row.getByRole("img")).toBeVisible();
+  await row.getByRole("link").click();
+  const detailImage = page.locator(".movie-detail img");
+  await expect(detailImage).toHaveAttribute("src", /^data:image\/jpeg;base64,/);
+  await page.reload();
+  await expect
+    .poll(() => detailImage.evaluate((image) => (image as HTMLImageElement).naturalWidth))
+    .toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Guardar en mi lista", exact: true }).click();
+  await page.getByRole("link", { name: "En mi lista · Ver y editar", exact: true }).click();
+  const saved = page.getByRole("article", { name: "Historia con afiche", exact: true });
+  await expect(saved.getByRole("img")).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await saved.getByRole("button", { name: "Quitar de mi lista", exact: true }).click();
+  await page.goto("/admin");
+  await row.getByRole("button", { name: "Editar Historia con afiche", exact: true }).click();
+  await expect(preview).toHaveAttribute("src", /^data:image\/jpeg;base64,/);
+  await fileInput.setInputFiles(path.resolve("public/posters/chihiro.jpg"));
+  await page.getByRole("button", { name: "Guardar película", exact: true }).click();
+  await row.getByRole("link").click();
+  const posterSource = await detailImage.getAttribute("src");
+  await expect
+    .poll(() => detailImage.evaluate((image) => (image as HTMLImageElement).naturalWidth))
+    .toBeGreaterThan(0);
+  await page.goto("/");
+  await expect(
+    page.getByRole("article").filter({ hasText: "Historia con afiche" }).getByRole("img"),
+  ).toHaveAttribute("src", posterSource!);
+  for (const width of [375, 768, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.screenshot({ path: `test-results/poster-catalog-${width}.png`, fullPage: true });
+  }
+  await page.goto("/admin");
+  await row.getByRole("button", { name: "Editar Historia con afiche", exact: true }).click();
+  await page.route("https://posters.test/ausente.jpg", (route) =>
+    route.fulfill({ status: 404, body: "" }),
+  );
+  await page
+    .getByLabel("URL del afiche (opcional)", { exact: true })
+    .fill("https://posters.test/ausente.jpg");
+  await expect(
+    page.getByText("No se pudo cargar el afiche. Revisá el enlace o subí una imagen.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.route("https://posters.test/afiche.jpg", (route) =>
+    route.fulfill({
+      path: path.resolve("public/posters/interestelar.jpg"),
+      contentType: "image/jpeg",
+    }),
+  );
+  await page
+    .getByLabel("URL del afiche (opcional)", { exact: true })
+    .fill("https://posters.test/afiche.jpg");
+  await expect
+    .poll(() => preview.evaluate((image) => (image as HTMLImageElement).naturalWidth))
+    .toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Guardar película", exact: true }).click();
+  await expect(row.getByRole("img")).toHaveAttribute("src", "https://posters.test/afiche.jpg");
+  await row.getByRole("button", { name: "Editar Historia con afiche", exact: true }).click();
+  await page.getByRole("button", { name: "Quitar imagen", exact: true }).click();
+  await expect(preview).toHaveCount(0);
+  await page.getByRole("button", { name: "Guardar película", exact: true }).click();
+  await expect(row.getByRole("img")).toHaveCount(0);
+  page.once("dialog", (dialog) => dialog.accept());
+  await row.getByRole("button", { name: "Eliminar Historia con afiche", exact: true }).click();
+  await expect(row).toHaveCount(0);
 });

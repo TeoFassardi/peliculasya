@@ -1,14 +1,16 @@
 import { useState } from "react";
+import { isValidPoster } from "../lib/poster";
 
 interface MoviePosterProps {
   title: string;
   genre: string;
   url?: string;
+  onImageError?: () => void;
 }
 
-export function MoviePoster({ title, genre, url }: MoviePosterProps) {
+export function MoviePoster({ title, genre, url, onImageError }: MoviePosterProps) {
   const [failedUrl, setFailedUrl] = useState<string>();
-  const showImage = url?.startsWith("https://") && failedUrl !== url;
+  const showImage = Boolean(url) && isValidPoster(url ?? "") && failedUrl !== url;
 
   return (
     <div className="movie-poster">
@@ -18,7 +20,11 @@ export function MoviePoster({ title, genre, url }: MoviePosterProps) {
           alt={`Afiche de ${title}`}
           loading="lazy"
           referrerPolicy="no-referrer"
-          onError={() => setFailedUrl(url)}
+          decoding="async"
+          onError={() => {
+            setFailedUrl(url);
+            onImageError?.();
+          }}
         />
       ) : (
         <div className="poster-fallback" aria-label={`Sin afiche para ${title}`}>

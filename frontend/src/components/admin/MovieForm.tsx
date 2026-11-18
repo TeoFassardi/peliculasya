@@ -1,9 +1,11 @@
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { movieSchema, MOVIE_GENRES, type MovieFormValues } from "../../schemas/movie.schema";
 import type { Movie } from "../../types/movie";
 import { getErrorMessage } from "../../lib/api";
 import { FormField } from "../FormField";
+import { PosterInput } from "./PosterInput";
 
 interface MovieFormProps {
   movie: Movie | null;
@@ -12,10 +14,13 @@ interface MovieFormProps {
 }
 
 export function MovieForm({ movie, onSave, onCancel }: MovieFormProps) {
+  const [processingPoster, setProcessingPoster] = useState(false);
   const {
     register,
     handleSubmit,
     setError,
+    setValue,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<MovieFormValues>({
     resolver: zodResolver(movieSchema),
@@ -29,8 +34,10 @@ export function MovieForm({ movie, onSave, onCancel }: MovieFormProps) {
       posterUrl: movie?.posterUrl ?? "",
     },
   });
+  const [title, genre, posterUrl] = useWatch({ control, name: ["title", "genre", "posterUrl"] });
 
   async function submit(values: MovieFormValues) {
+    if (processingPoster) return;
     try {
       await onSave(values);
     } catch (error) {
@@ -43,6 +50,16 @@ export function MovieForm({ movie, onSave, onCancel }: MovieFormProps) {
       <h2 id="movie-form-title">{movie ? `Editar ${movie.title}` : "Agregar película"}</h2>
       <form onSubmit={handleSubmit(submit)} noValidate>
         <fieldset disabled={isSubmitting} className="form-fields">
+          <PosterInput
+            value={posterUrl ?? ""}
+            title={title ?? ""}
+            genre={genre ?? ""}
+            error={errors.posterUrl?.message}
+            onBusyChange={setProcessingPoster}
+            onChange={(value) =>
+              setValue("posterUrl", value, { shouldDirty: true, shouldValidate: true })
+            }
+          />
           <FormField label="Título" name="title" error={errors.title?.message}>
             <input
               id="title"
@@ -103,21 +120,6 @@ export function MovieForm({ movie, onSave, onCancel }: MovieFormProps) {
               aria-describedby={errors.releaseDate ? "releaseDate-error" : undefined}
             />
           </FormField>
-          <FormField
-            label="URL del afiche (opcional)"
-            name="posterUrl"
-            error={errors.posterUrl?.message}
-            hint="Pegá una URL HTTPS. Si no hay imagen, mostramos una portada de respaldo."
-          >
-            <input
-              id="posterUrl"
-              type="url"
-              {...register("posterUrl")}
-              aria-invalid={!!errors.posterUrl}
-              aria-describedby={errors.posterUrl ? "posterUrl-error" : undefined}
-              placeholder="https://…"
-            />
-          </FormField>
           <label className="checkbox-field">
             <input type="checkbox" {...register("available")} /> Disponible
           </label>
@@ -127,8 +129,12 @@ export function MovieForm({ movie, onSave, onCancel }: MovieFormProps) {
             </p>
           )}
           <div className="button-row">
-            <button className="button" type="submit">
-              {isSubmitting ? "Guardando…" : "Guardar película"}
+            <button className="button" type="submit" disabled={processingPoster}>
+              {processingPoster
+                ? "Preparando imagen…"
+                : isSubmitting
+                  ? "Guardando…"
+                  : "Guardar película"}
             </button>
             <button className="button secondary" type="button" onClick={onCancel}>
               Cancelar

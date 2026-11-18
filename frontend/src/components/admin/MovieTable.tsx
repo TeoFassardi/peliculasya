@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import type { Movie } from "../../types/movie";
+import { MoviePoster } from "../MoviePoster";
 
 interface MovieTableProps {
   movies: Movie[];
@@ -25,7 +26,12 @@ export function MovieTable({ movies, busy, onEdit, onDelete }: MovieTableProps) 
           {movies.map((movie) => (
             <tr key={movie._id}>
               <td>
-                <Link to={`/movies/${movie._id}`}>{movie.title}</Link>
+                <Link className="admin-movie-link" to={`/movies/${movie._id}`}>
+                  <div className="admin-movie-poster">
+                    <MoviePoster title={movie.title} genre={movie.genre} url={movie.posterUrl} />
+                  </div>
+                  <span>{movie.title}</span>
+                </Link>
               </td>
               <td>{movie.genre}</td>
               <td>{movie.available ? "Disponible" : "No disponible"}</td>

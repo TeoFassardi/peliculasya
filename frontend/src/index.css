@@ -249,9 +249,74 @@ h2 {
   overflow: hidden;
 }
 .movie-poster img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+.poster-input {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 24px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--color-border);
+}
+.poster-preview {
+  align-self: start;
+}
+.poster-controls {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+.poster-controls h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.poster-controls .button {
+  justify-self: start;
+}
+.poster-controls input[type="file"] {
+  font-size: 0.85rem;
+  overflow: hidden;
+}
+.poster-controls input[type="file"]::file-selector-button {
+  font: inherit;
+  margin-right: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  min-height: 44px;
+}
+.admin-movie-link {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-decoration: none;
+}
+.admin-movie-link:hover span {
+  text-decoration: underline;
+}
+.admin-movie-poster {
+  width: 56px;
+  flex-shrink: 0;
+}
+.admin-movie-poster .poster-fallback {
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
+.admin-movie-poster .poster-fallback strong,
+.admin-movie-poster .poster-fallback span {
+  display: none;
+}
+.admin-movie-poster .poster-fallback svg {
+  width: 28px;
+  margin: 0;
 }
 .poster-fallback {
   height: 100%;
@@ -640,6 +705,12 @@ td:first-child {
   }
 }
 @media (max-width: 760px) {
+  .poster-input {
+    grid-template-columns: 1fr;
+  }
+  .poster-preview {
+    width: 140px;
+  }
   .user-role-row {
     grid-template-columns: 1fr;
     gap: 20px;

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidPoster } from "../lib/poster";
 
 export const MOVIE_GENRES = [
   "Acción",
@@ -20,12 +21,10 @@ export const movieSchema = z.object({
   durationMinutes: z.number({ error: "Ingresá la duración" }).int().min(1).max(600),
   releaseDate: z.iso.date({ error: "Ingresá una fecha válida" }),
   available: z.boolean(),
-  posterUrl: z.union([
-    z.literal(""),
-    z
-      .url({ error: "Ingresá una URL válida" })
-      .refine((url) => new URL(url).protocol === "https:", "La URL debe comenzar con https://"),
-  ]),
+  posterUrl: z
+    .string()
+    .max(350_000, "La imagen es demasiado grande")
+    .refine(isValidPoster, "Usá una URL HTTPS válida o subí una imagen desde el formulario"),
 });
 
 export type MovieFormValues = z.infer<typeof movieSchema>;
