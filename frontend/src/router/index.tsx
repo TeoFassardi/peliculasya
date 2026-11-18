@@ -8,6 +8,8 @@ import { Register } from "../pages/Register";
 import { Admin } from "../pages/Admin";
 import { Feedback } from "../components/Feedback";
 import { Link } from "react-router";
+import { Suspense } from "react";
+import { Watchlist, Users } from "../pages/LazyPages";
 
 export const router = createBrowserRouter([
   {
@@ -20,8 +22,31 @@ export const router = createBrowserRouter([
       { path: "login", element: <Login /> },
       { path: "register", element: <Register /> },
       {
+        element: <ProtectedRoute />,
+        children: [
+          {
+            path: "mi-lista",
+            element: (
+              <Suspense fallback={<Feedback title="Cargando tu lista…" />}>
+                <Watchlist />
+              </Suspense>
+            ),
+          },
+        ],
+      },
+      {
         element: <ProtectedRoute roles={["admin"]} redirectTo="/sin-permisos" />,
-        children: [{ path: "admin", element: <Admin /> }],
+        children: [
+          { path: "admin", element: <Admin /> },
+          {
+            path: "admin/usuarios",
+            element: (
+              <Suspense fallback={<Feedback title="Cargando cuentas…" />}>
+                <Users />
+              </Suspense>
+            ),
+          },
+        ],
       },
       {
         path: "sin-permisos",

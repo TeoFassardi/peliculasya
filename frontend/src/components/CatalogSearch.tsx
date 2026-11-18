@@ -3,9 +3,16 @@ import { useState, type SubmitEvent } from "react";
 interface CatalogSearchProps {
   initialSearch: string;
   onSearch: (value: string) => void;
+  label?: string;
+  placeholder?: string;
 }
 
-export function CatalogSearch({ initialSearch, onSearch }: CatalogSearchProps) {
+export function CatalogSearch({
+  initialSearch,
+  onSearch,
+  label = "Buscar por título",
+  placeholder = "¿Qué película tenés en mente?",
+}: CatalogSearchProps) {
   const [value, setValue] = useState(initialSearch);
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
@@ -15,7 +22,7 @@ export function CatalogSearch({ initialSearch, onSearch }: CatalogSearchProps) {
 
   return (
     <form className="catalog-search" role="search" onSubmit={handleSubmit}>
-      <label htmlFor="catalog-search">Buscar por título</label>
+      <label htmlFor="catalog-search">{label}</label>
       <div className="search-controls">
         <input
           id="catalog-search"
@@ -23,7 +30,7 @@ export function CatalogSearch({ initialSearch, onSearch }: CatalogSearchProps) {
           maxLength={120}
           value={value}
           onChange={(event) => setValue(event.target.value)}
-          placeholder="¿Qué película tenés en mente?"
+          placeholder={placeholder}
         />
         <button className="button" type="submit">
           Buscar

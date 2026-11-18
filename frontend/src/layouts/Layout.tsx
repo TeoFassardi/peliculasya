@@ -39,6 +39,7 @@ export function Layout() {
             <NavLink to="/" end>
               Catálogo
             </NavLink>
+            {session && <NavLink to="/mi-lista">Mi lista</NavLink>}
             {session?.user.role === "admin" && <NavLink to="/admin">Administrar</NavLink>}
             {!isPending &&
               (session ? (

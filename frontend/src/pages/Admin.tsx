@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import type { Movie } from "../types/movie";
 import type { MovieFormValues } from "../schemas/movie.schema";
 import {
@@ -57,15 +58,20 @@ export function Admin() {
           <h1>Administrar catálogo</h1>
           <p className="muted">Agregá historias y mantené sus datos al día.</p>
         </div>
-        <button
-          className="button"
-          onClick={() => {
-            setEditor({ movie: null });
-            setNotice("");
-          }}
-        >
-          Agregar película
-        </button>
+        <div className="button-row">
+          <Link className="button secondary" to="/admin/usuarios">
+            Usuarios y roles
+          </Link>
+          <button
+            className="button"
+            onClick={() => {
+              setEditor({ movie: null });
+              setNotice("");
+            }}
+          >
+            Agregar película
+          </button>
+        </div>
       </div>
       <p role="status" className="notice">
         {notice}

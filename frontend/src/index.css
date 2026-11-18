@@ -345,6 +345,120 @@ h2 {
   color: #d2dfdf;
   font-size: 0.85rem;
 }
+.save-movie {
+  margin-top: 24px;
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+.google-login {
+  margin-top: 12px;
+}
+.list-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 32px;
+}
+.list-toolbar .catalog-search {
+  margin-bottom: 0;
+}
+.list-filter {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 300px);
+}
+.list-filter label {
+  font-weight: 600;
+}
+.watchlist-items {
+  border-top: 1px solid var(--color-border);
+}
+.watchlist-row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 28px;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.watchlist-poster .poster-fallback {
+  padding: 12px;
+}
+.watchlist-poster .poster-fallback strong {
+  font-size: 1rem;
+}
+.watchlist-poster .poster-fallback svg {
+  width: 32px;
+}
+.watchlist-poster .poster-fallback span {
+  font-size: 0.75rem;
+}
+.watchlist-copy {
+  min-width: 0;
+}
+.watchlist-title {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.watchlist-title h2 {
+  font-size: 1.4rem;
+}
+.watchlist-note {
+  margin: 20px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 65ch;
+}
+.watchlist-editor {
+  max-width: 640px;
+  margin-top: 16px;
+}
+.user-role-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.user-role-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+  align-items: center;
+  gap: 32px;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.user-identity h2 {
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+}
+.user-identity p {
+  overflow-wrap: anywhere;
+}
+.role-current {
+  font-size: 0.9rem;
+  margin-top: 8px;
+}
+.role-form {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.role-controls {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+}
+.role-controls select {
+  flex: 1;
+  min-width: 0;
+}
+.role-controls .button {
+  flex-shrink: 0;
+}
 .movie-facts {
   display: flex;
   flex-wrap: wrap;
@@ -526,6 +640,31 @@ td:first-child {
   }
 }
 @media (max-width: 760px) {
+  .user-role-row {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .watchlist-row {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .watchlist-title h2 {
+    font-size: 1.2rem;
+  }
+  .watchlist-poster .poster-fallback strong,
+  .watchlist-poster .poster-fallback span {
+    display: none;
+  }
+  .watchlist-poster .poster-fallback {
+    justify-content: center;
+    align-items: center;
+  }
+  .watchlist-poster .poster-fallback svg {
+    margin: 0;
+  }
+  .role-controls {
+    flex-wrap: wrap;
+  }
   .header-inner {
     padding: 20px 24px;
     align-items: start;

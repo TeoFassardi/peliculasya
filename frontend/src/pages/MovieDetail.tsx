@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router";
 import { useGetMovieQuery } from "../store/api";
 import { MoviePoster } from "../components/MoviePoster";
 import { Feedback } from "../components/Feedback";
+import { SaveMovieButton } from "../components/SaveMovieButton";
 
 export function MovieDetail() {
   const { id = "" } = useParams();
@@ -32,6 +33,7 @@ export function MovieDetail() {
           </p>
           <h1>{movie.title}</h1>
           <span className="status-badge">{movie.available ? "Disponible" : "No disponible"}</span>
+          <SaveMovieButton movieId={movie._id} />
           <h2>Sinopsis</h2>
           <p className="synopsis">{movie.synopsis}</p>
           <dl className="movie-facts">

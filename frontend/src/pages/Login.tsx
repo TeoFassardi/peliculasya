@@ -6,12 +6,14 @@ import { loginSchema, type LoginFormValues } from "../schemas/auth.schema";
 import { signIn, useSession } from "../lib/auth-client";
 import { FormField } from "../components/FormField";
 import { getErrorMessage } from "../lib/api";
+import { useGetPublicConfigQuery } from "../store/api";
 
 export function Login() {
   const { data: session, isPending } = useSession();
   const location = useLocation();
   const navigate = useNavigate();
-  const [socialPending, setSocialPending] = useState(false);
+  const [socialPending, setSocialPending] = useState<"github" | "google" | null>(null);
+  const { data: config } = useGetPublicConfigQuery();
   const {
     register,
     handleSubmit,
@@ -41,20 +43,22 @@ export function Login() {
     }
   }
 
-  async function githubLogin() {
-    setSocialPending(true);
+  async function socialLogin(provider: "github" | "google") {
+    setSocialPending(provider);
     try {
       const { error } = await signIn.social({
-        provider: "github",
+        provider,
         callbackURL: from,
         errorCallbackURL: "/login",
       });
       if (error)
-        setError("root", { message: "No pudimos conectar con GitHub. Intentá nuevamente." });
+        setError("root", {
+          message: `No pudimos conectar con ${provider === "google" ? "Google" : "GitHub"}. Intentá nuevamente.`,
+        });
     } catch (error) {
       setError("root", { message: getErrorMessage(error) });
     } finally {
-      setSocialPending(false);
+      setSocialPending(null);
     }
   }
 
@@ -64,11 +68,11 @@ export function Login() {
       <p className="muted">Ingresá a tu cuenta de PeliculasYa.</p>
       {oauthFailed && (
         <p className="field-error" role="alert">
-          No se pudo completar el ingreso con GitHub. Volvé a intentar o ingresá con email.
+          No se pudo completar el ingreso. Volvé a intentar o ingresá con email.
         </p>
       )}
       <form onSubmit={handleSubmit(submit)} noValidate>
-        <fieldset disabled={isSubmitting || socialPending} className="form-fields">
+        <fieldset disabled={isSubmitting || Boolean(socialPending)} className="form-fields">
           <FormField label="Email" name="email" error={errors.email?.message}>
             <input
               id="email"
@@ -102,11 +106,20 @@ export function Login() {
       <div className="auth-divider">o continuá con</div>
       <button
         className="button secondary full-width"
-        disabled={socialPending || isSubmitting}
-        onClick={githubLogin}
+        disabled={Boolean(socialPending) || isSubmitting}
+        onClick={() => socialLogin("github")}
       >
-        {socialPending ? "Conectando…" : "Ingresar con GitHub"}
+        {socialPending === "github" ? "Conectando con GitHub…" : "Ingresar con GitHub"}
       </button>
+      {config?.googleEnabled && (
+        <button
+          className="button secondary full-width google-login"
+          disabled={Boolean(socialPending) || isSubmitting}
+          onClick={() => socialLogin("google")}
+        >
+          {socialPending === "google" ? "Conectando con Google…" : "Ingresar con Google"}
+        </button>
+      )}
       <p className="auth-switch">
         ¿Primera vez? <Link to="/register">Crear cuenta</Link>
       </p>
