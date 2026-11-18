@@ -3,6 +3,8 @@ import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.js";
 import moviesRouter from "./routes/movies.routes.js";
 import { errorHandler } from "./middlewares/error-handler.js";
+import watchlistRouter from "./routes/watchlist.routes.js";
+import { publicConfig } from "./config/social-providers.js";
 
 export const app = express();
 
@@ -10,6 +12,10 @@ export const app = express();
 app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(express.json({ limit: "100kb" }));
 app.use("/api/movies", moviesRouter);
+app.use("/api/watchlist", watchlistRouter);
+app.get("/api/config", (_req, res) => {
+  res.json(publicConfig);
+});
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", uptimeSeconds: process.uptime() });

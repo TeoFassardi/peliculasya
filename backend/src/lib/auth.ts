@@ -4,6 +4,8 @@ import { betterAuth } from "better-auth";
 import { admin } from "better-auth/plugins";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 import { MongoClient } from "mongodb";
+import { googleProvider } from "../config/social-providers.js";
+import { roleChangeHook } from "./role-change-hook.js";
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -29,16 +31,17 @@ export const auth = betterAuth({
     enabled: true, // hashea con scrypt; minimo 8 caracteres por defecto
   },
   socialProviders: {
+    ...(googleProvider ? { google: googleProvider } : {}),
     github: {
       clientId: requireEnv("GITHUB_CLIENT_ID"),
       clientSecret: requireEnv("GITHUB_CLIENT_SECRET"),
     },
   },
-  // Si alguien ya registrado con email+password entra con GitHub (mismo email), une las cuentas
-  // en vez de tirar account_not_linked. Seguro porque GitHub solo devuelve emails verificados.
+  // Solo se confía en proveedores con email verificado para unir cuentas del mismo email.
   account: {
-    accountLinking: { trustedProviders: ["github"] },
+    accountLinking: { trustedProviders: ["github", "google"] },
   },
+  hooks: { before: roleChangeHook },
   // admin(): agrega user.role ("user" por defecto) y endpoints para listar usuarios y revocar sesiones.
   plugins: [admin({ defaultRole: "user" })],
 });
