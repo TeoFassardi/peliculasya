@@ -18,4 +18,4 @@ Proyecto académico full stack. Los visitantes y usuarios registrados consultan 
 - Conservar los apuntes y el ejemplo original de la materia: clases en la raíz y código original en referencia-materia/. PeliculasYa agrega su implementación en backend/ y frontend/ sin borrar ese material de referencia.
 
 ## Estado externo
-Pendiente crear o conectar Atlas, Render y el repositorio propio en GitHub. No se afirman URLs ni autenticación OAuth en producción hasta verificarlas.
+Repositorio propio: https://github.com/TeoFassardi/peliculasya. Frontend: https://peliculasya.onrender.com. Backend: https://peliculasya-backend.onrender.com. Ambos servicios están desplegados en Render y conectados a Atlas. Seed ejecutado con seis películas y cuentas de demostración admin/user. El usuario confirmó OAuth GitHub, sesión tras F5, ABM admin y acceso denegado al usuario común en producción.

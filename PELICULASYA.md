@@ -8,12 +8,12 @@ Basado en la arquitectura del [repositorio de la materia](https://github.com/T-A
 
 | Recurso | Estado |
 | --- | --- |
-| Repositorio propio | Pendiente de crear y configurar el remoto |
-| Frontend en Render | Pendiente de publicar |
-| Backend en Render | Pendiente de publicar |
-| GitHub OAuth en producción | Pendiente de configurar y probar |
+| Repositorio propio | [TeoFassardi/peliculasya](https://github.com/TeoFassardi/peliculasya) |
+| Frontend en Render | [peliculasya.onrender.com](https://peliculasya.onrender.com) |
+| Backend en Render | [peliculasya-backend.onrender.com](https://peliculasya-backend.onrender.com) |
+| GitHub OAuth en producción | Ingreso y sesión tras F5 confirmados por el usuario |
 
-Estas entradas se deben reemplazar por enlaces reales antes de entregar. La aplicación local y las pruebas no acreditan el funcionamiento en producción.
+Desplegado en Render y conectado a MongoDB Atlas. El seed se ejecutó sobre la base utilizada por la aplicación publicada; las cuentas de prueba están disponibles.
 
 ## Stack y estructura
 
@@ -59,14 +59,14 @@ El frontend no requiere `.env` ni una URL absoluta de la API. Las contraseñas s
 
 ## Usuarios de prueba
 
-Configuración propuesta para la corrección, **todavía no creada en una base publicada**:
+Cuentas de demostración creadas en Atlas y disponibles en la aplicación publicada:
 
 | Rol | Email | Contraseña |
 | --- | --- | --- |
 | admin | `admin@peliculasya.test` | `Aula-Cine-Admin-2026!` |
 | user | `user@peliculasya.test` | `Aula-Cine-User-2026!` |
 
-Para crearlos, copiar estos datos a las cuatro variables `SEED_` y ejecutar `npm run seed` contra la base elegida. Estas credenciales serán públicas: usar cuentas exclusivas de demostración sin datos personales. Si se eligen otras, actualizar esta tabla antes de entregar.
+Para recrearlas en otra base, copiar estos datos a las cuatro variables `SEED_` y ejecutar `npm run seed`. Estas credenciales son públicas y pertenecen exclusivamente a cuentas de demostración.
 
 El seed se puede repetir: no duplica las películas de muestra, no sobreescribe sus cambios ni cambia las contraseñas existentes. Si un email ya existe con un rol diferente, se detiene sin promoverlo; usar un email nuevo. El seed nunca se ejecuta automáticamente al iniciar o desplegar.
 
@@ -111,22 +111,22 @@ Errores: `400` por datos, fecha, parámetros o identificador inválidos; `401` s
 
 ## Desplegar en Render
 
-1. Crear una base en MongoDB Atlas, usuario de base y reglas de acceso de red compatibles con Render. Guardar la URI únicamente en variables de entorno.
-2. Crear un repositorio propio en GitHub y subir el proyecto con commits por etapa. El remoto original apunta a la materia: revisarlo con `git remote -v` y reemplazar `origin` por la URL del repositorio propio antes de hacer push.
+1. Crear una base en MongoDB Atlas y un usuario de base. En Render, abrir el backend → Connect → Outbound y agregar sus rangos a la IP Access List de Atlas. Conservar la IP local para desarrollo. Guardar la URI únicamente en variables de entorno.
+2. Conectar el repositorio propio de GitHub. En este proyecto, `origin` apunta a `https://github.com/TeoFassardi/peliculasya.git`; se conserva el historial de la materia y los commits por etapa.
 3. Crear **Web Service** conectado al repositorio: Root Directory `backend`, Build Command `npm ci --include=dev && npm run build`, Start Command `npm start`, Health Check Path `/health`.
 4. Configurar `NODE_VERSION=22`, `NODE_ENV=production`, `MONGODB_URI`, un `BETTER_AUTH_SECRET` nuevo y las credenciales GitHub de producción. Render asigna `PORT`.
 5. Crear **Static Site** del mismo repositorio: Root Directory `frontend`, Build Command `npm ci --include=dev && npm run build`, Publish Directory `dist`, `NODE_VERSION=22`.
-6. Configurar estos **Rewrites**, en este orden, reemplazando el dominio de ejemplo por el backend real:
+6. En el Static Site, abrir Redirects/Rewrites y configurar estas reglas en este orden:
 
 | Source | Destination | Action |
 | --- | --- | --- |
-| `/api/*` | `https://<backend-real>.onrender.com/api/*` | Rewrite |
+| `/api/*` | `https://peliculasya-backend.onrender.com/api/*` | Rewrite |
 | `/*` | `/index.html` | Rewrite |
 
-7. En el backend, poner `BETTER_AUTH_URL=https://<frontend-real>.onrender.com` y volver a desplegar.
-8. Crear una segunda OAuth App de GitHub. Homepage: URL del frontend. Callback: `https://<frontend-real>.onrender.com/api/auth/callback/github`. Cargar sus credenciales en el backend.
+7. En el backend, poner `BETTER_AUTH_URL=https://peliculasya.onrender.com` y volver a desplegar.
+8. Crear una segunda OAuth App de GitHub. Homepage: URL del frontend. Callback: `https://peliculasya.onrender.com/api/auth/callback/github`. Cargar sus credenciales en el backend.
 9. Ejecutar el seed contra la base de producción desde una terminal local configurada con las variables de ese entorno. No publicar los valores ni registrar las credenciales en comandos o commits.
-10. Completar las URLs del inicio de este README y verificar todas las pruebas de aceptación siguientes.
+10. Verificar los enlaces y las pruebas de aceptación siguientes. El frontend debe llamar a su propio origen bajo `/api`.
 
 Referencias: [Render: Web Services](https://render.com/docs/web-services), [Render: rewrites](https://render.com/docs/redirects-rewrites), [Better Auth: GitHub](https://www.better-auth.com/docs/authentication/github).
 
@@ -156,9 +156,11 @@ La ruta debe coincidir con la instalación de cada equipo. Esto inicia un proces
 
 Pruebas de navegador desde `frontend/`: ejecutar `npx playwright install chromium` y luego `npm run test:e2e`. Si se usa Microsoft Edge instalado, configurar `$env:PLAYWRIGHT_CHANNEL = 'msedge'`. Las variables `MONGOMS_` anteriores también se heredan para estas pruebas. Los puertos 3000 y 5173 deben estar libres. Se inician frontend y backend temporales, con usuarios y catálogo aislados, y se cierran al terminar.
 
-Validado durante el desarrollo: build de ambos proyectos, lint del frontend, seis pruebas de integración y tres pruebas de navegador. Las capturas de 375, 768 y 1440px se generan en `frontend/test-results/` y no se versionan. Quedan pendientes las comprobaciones específicas de producción.
+Validado durante el desarrollo: build de ambos proyectos, lint del frontend, seis pruebas de integración y tres pruebas de navegador. Las capturas de 375, 768 y 1440px se generan en `frontend/test-results/` y no se versionan. En producción, el usuario confirmó login con GitHub, sesión tras F5, ABM admin y acceso denegado al usuario común.
 
-Comprobación manual obligatoria antes de entregar:
+Verificación adicional del 18 de noviembre de 2026: un navegador automático contra producción comprobó catálogo, búsqueda, detalle con F5, registro con rol user, sesión tras F5, logout, cuentas de corrección, rechazo 403 para user, ABM admin, validación, cancelar sin guardar y confirmación de borrado. Se comprobaron las rutas `/login` y `/admin` tras recargar, las llamadas a `/api` bajo el origen del frontend, paginación API sin duplicados y ausencia de desborde horizontal a 375, 768 y 1440px. Los registros temporales creados se eliminaron al terminar.
+
+Lista de aceptación para repetir antes de entregar o después de cambios (cancelación/rechazo OAuth y recorrido con teclado siguen pendientes de comprobación manual):
 
 - Registro crea rol user; login email, logout y F5 conservan/revocan sesión según corresponda.
 - Visitante va a login al abrir `/admin`; user ve “Sin permisos”; admin puede hacer todo el ABM.
