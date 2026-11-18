@@ -197,4 +197,6 @@ Durante el desarrollo pasaron los builds, lint, nueve pruebas de integración y 
 
 El 18 de noviembre de 2026 se verificó además con navegador automático en producción: catálogo y búsqueda, detalle con F5, registro con rol user, sesión tras F5 y logout, cuentas de prueba, rechazo 403 de escrituras para user, ABM admin, validación, cancelar sin guardar y confirmación de borrado. Se comprobó `/api` bajo el origen del frontend, paginación de la API y ausencia de desborde horizontal a 375, 768 y 1440px. Los registros temporales de verificación se eliminaron.
 
+Después de publicar los opcionales se verificaron en producción: listado de cuentas autorizado para admin y rechazado para user, protección contra quitarse el rol propio, y creación, edición y filtrado de registros privados. Otra cuenta admin no pudo consultar ni editar el registro del propietario. Se eliminaron las películas, registros y sesiones temporales de esa comprobación. Google permanece deshabilitado hasta cargar sus credenciales reales; solo su flujo de inicio y recuperación de errores se probó en el entorno aislado.
+
 No se deben versionar archivos `.env` ni credenciales de infraestructura. Las contraseñas publicadas arriba corresponden solamente a cuentas de demostración para la corrección.
