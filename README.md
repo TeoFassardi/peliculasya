@@ -15,7 +15,7 @@ El backend gratuito puede tardar en responder después de un período sin uso.
 
 ## Entidad y arquitectura
 
-La entidad es **película**: título, sinopsis y género (texto), duración en minutos (número), fecha de estreno (fecha), disponibilidad (booleano) y URL opcional del afiche. MongoDB agrega identificador y fechas de creación y modificación.
+La entidad es **película**: título, sinopsis y género (texto), duración en minutos (número), fecha de estreno (fecha), disponibilidad (booleano) y afiche opcional (texto con una URL o una imagen optimizada). MongoDB agrega identificador y fechas de creación y modificación.
 
 - **Backend:** Express 5 + TypeScript, MongoDB/Mongoose, Better Auth y Zod. Rutas, controladores, servicios, modelos y schemas separados.
 - **Frontend:** React + Vite + TypeScript, React Router, RTK Query, React Hook Form y Zod.
@@ -120,7 +120,24 @@ Ejemplo de cuerpo para crear una película:
 }
 ```
 
-Géneros: Acción, Comedia, Drama, Terror, Ciencia ficción, Animación, Documental, Aventura, Suspenso y Romance. Duración: entero entre 1 y 600. Fecha: `YYYY-MM-DD`. El afiche puede omitirse, quedar vacío o ser HTTPS. En `PATCH` enviar uno o más campos; los campos ausentes conservan su valor. Un título puede repetirse.
+Géneros: Acción, Comedia, Drama, Terror, Ciencia ficción, Animación, Documental, Aventura, Suspenso y Romance. Duración: entero entre 1 y 600. Fecha: `YYYY-MM-DD`. El afiche puede omitirse, quedar vacío, ser una URL HTTPS, una ruta de los afiches incluidos (`/posters/nombre.jpg`) o un JPEG optimizado por el formulario. En `PATCH` enviar uno o más campos; los campos ausentes conservan su valor. Un título puede repetirse.
+
+## Afiches
+
+El catálogo, el detalle, Mi lista y la tabla de administración muestran el mismo afiche. Al crear o editar, el formulario ofrece una vista previa, una URL HTTPS directa y subida de archivos JPG, PNG o WebP de hasta 8 MB. También permite reemplazar o quitar la imagen.
+
+Las imágenes subidas se convierten en el navegador a JPEG de hasta 800 × 1200px y 250 KiB. Se guardan como datos de imagen en MongoDB dentro de `posterUrl`, por lo que no necesitan un servicio externo ni dependen del disco temporal de Render. El backend valida el formato y el tamaño, rechaza SVG y otros esquemas, y limita el cuerpo JSON a 1 MB. Si una imagen externa falla o no hay afiche, se muestra una portada de respaldo.
+
+Las seis películas de muestra incluyen afiches en `frontend/public/posters/`, publicados con el frontend. El seed los asigna a las películas nuevas. Para completar solo los afiches vacíos de esas películas en una base existente:
+
+```text
+cd backend
+npm run backfill:posters
+```
+
+Este comando no reemplaza imágenes elegidas por el administrador ni cambia los demás datos. Publicar primero el frontend que contiene los archivos; la base se obtiene de `backend/.env`.
+
+Fuentes de los afiches de demostración: [Chihiro](https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg), [Interestelar](https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg), [El gran hotel Budapest](https://image.tmdb.org/t/p/w500/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg), [La llegada](https://image.tmdb.org/t/p/w500/x2FJsf1ElAgr63Y3PNPtJrcmpoe.jpg), [El secreto de sus ojos](https://cineplex.com.co/wp-content/uploads/2020/10/poster-el-secreto-de-sus-ojos.jpg) y [Cinema Paradiso](https://image.tmdb.org/t/p/w500/8SRUfRUi6x4O68n0VCbDNRa6iGL.jpg). La procedencia también está guardada en los metadatos de cada archivo.
 
 Errores: `400` por datos, fecha, parámetros o identificador inválidos; `401` sin sesión; `403` sin rol; `404` si no existe; `500` ante fallos internos. Los errores propios usan `{ "error": { "message": "..." } }`; la validación de formularios agrega `details` por campo y `formErrors`. Better Auth conserva su formato de errores.
 
@@ -193,7 +210,7 @@ $env:MONGOMS_SYSTEM_BINARY_VERSION_CHECK = 'false'
 
 Ajustar la ruta a la instalación del equipo. Para las pruebas de navegador, ejecutar `npx playwright install chromium` desde `frontend/` antes de `npm run test:e2e`. Como alternativa, usar Microsoft Edge instalado con `$env:PLAYWRIGHT_CHANNEL = 'msedge'`. Los puertos 3000 y 5173 deben estar libres. Estas pruebas inician backend y frontend temporales y los cierran al terminar. Las capturas de 375, 768 y 1440px se generan en `frontend/test-results/` y no se versionan.
 
-Durante el desarrollo pasaron los builds, lint, nueve pruebas de integración y seis de navegador. Las pruebas adicionales cubren el aislamiento de listas entre cuentas, validación de notas, duplicados, autorización y cambio de roles, y el inicio de Google OAuth con callback local. En producción, el usuario confirmó login con GitHub, sesión tras F5, ABM del administrador, acceso denegado al usuario común y, tras configurar Google, el ingreso completo con una cuenta real de ese proveedor.
+Durante el desarrollo pasaron los builds, lint, diez pruebas de integración y siete de navegador. Las pruebas adicionales cubren el aislamiento de listas entre cuentas, validación de notas, duplicados, autorización y cambio de roles, el inicio de Google OAuth con callback local, y la creación, reemplazo, eliminación y validación de afiches. En producción, el usuario confirmó login con GitHub, sesión tras F5, ABM del administrador, acceso denegado al usuario común y, tras configurar Google, el ingreso completo con una cuenta real de ese proveedor.
 
 El 18 de noviembre de 2026 se verificó además con navegador automático en producción: catálogo y búsqueda, detalle con F5, registro con rol user, sesión tras F5 y logout, cuentas de prueba, rechazo 403 de escrituras para user, ABM admin, validación, cancelar sin guardar y confirmación de borrado. Se comprobó `/api` bajo el origen del frontend, paginación de la API y ausencia de desborde horizontal a 375, 768 y 1440px. Los registros temporales de verificación se eliminaron.
 
