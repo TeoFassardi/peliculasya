@@ -8,4 +8,4 @@ Esta carpeta conserva el backend y frontend originales del repositorio de la mat
 
 Es material de referencia independiente. No es necesario instalarlo ni ejecutarlo para usar PeliculasYa. Conserva sus configuraciones y dependencias originales.
 
-La aplicación nueva está en `../backend/` y `../frontend/`; su documentación está en [PELICULASYA.md](../PELICULASYA.md).
+La aplicación nueva está en `../backend/` y `../frontend/`; su documentación está en [README.md](../README.md).

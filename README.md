@@ -29,7 +29,7 @@ referencia-materia/   Ejemplo original de la materia
 clase N/              Apuntes originales
 ```
 
-Basado en el [repositorio de la materia](https://github.com/T-Arias/mdw-2026). Los apuntes y el ejemplo original se conservan en `clase N/` y `referencia-materia/`. La guía ampliada está en [PELICULASYA.md](PELICULASYA.md).
+Basado en el [repositorio de la materia](https://github.com/T-Arias/mdw-2026). Los apuntes y el ejemplo original se conservan en `clase N/` y `referencia-materia/`.
 
 ## Usuarios de prueba
 
@@ -94,7 +94,25 @@ El frontend no requiere `.env` ni una URL absoluta de la API. Las contraseñas s
 
 Las escrituras de películas exigen `authMiddleware` y `requireRole("admin")`. Los endpoints adicionales del plugin admin de Better Auth mantienen sus propios controles de acceso. El panel visual no permite cambiar roles.
 
-Listado con búsqueda y paginación: `GET /api/movies?search=viaje&page=1&limit=12`. Busca por título sin distinguir mayúsculas. La página inicial es 1 y el límite predeterminado es 12 (máximo 100). Los detalles de campos, cuerpos y errores están en [PELICULASYA.md](PELICULASYA.md#api).
+Listado con búsqueda y paginación: `GET /api/movies?search=viaje&page=1&limit=12`. Busca por título sin distinguir mayúsculas y trata los caracteres especiales como texto literal. La página inicial es 1 y el límite predeterminado es 12 (máximo 100). El orden es creación descendente, con identificador como desempate.
+
+Ejemplo de cuerpo para crear una película:
+
+```json
+{
+  "title": "Mi película",
+  "synopsis": "Una historia para descubrir.",
+  "genre": "Drama",
+  "durationMinutes": 100,
+  "releaseDate": "2024-06-15",
+  "available": true,
+  "posterUrl": ""
+}
+```
+
+Géneros: Acción, Comedia, Drama, Terror, Ciencia ficción, Animación, Documental, Aventura, Suspenso y Romance. Duración: entero entre 1 y 600. Fecha: `YYYY-MM-DD`. El afiche puede omitirse, quedar vacío o ser HTTPS. En `PATCH` enviar uno o más campos; los campos ausentes conservan su valor. Un título puede repetirse.
+
+Errores: `400` por datos, fecha, parámetros o identificador inválidos; `401` sin sesión; `403` sin rol; `404` si no existe; `500` ante fallos internos. Los errores propios usan `{ "error": { "message": "..." } }`; la validación de formularios agrega `details` por campo y `formErrors`. Better Auth conserva su formato de errores.
 
 ## Configuración de Render
 
@@ -112,7 +130,11 @@ Rewrites del Static Site, en este orden:
 | `/api/*` | `https://peliculasya-backend.onrender.com/api/*` | Rewrite |
 | `/*` | `/index.html` | Rewrite |
 
-La OAuth App de producción usa Homepage `https://peliculasya.onrender.com` y callback `https://peliculasya.onrender.com/api/auth/callback/github`. Sus credenciales y el secreto de Better Auth son distintos de los locales. Atlas permite los rangos de salida del backend de Render.
+La OAuth App de producción usa Homepage `https://peliculasya.onrender.com` y callback `https://peliculasya.onrender.com/api/auth/callback/github`. Sus credenciales y el secreto de Better Auth son distintos de los locales.
+
+Para autorizar la conexión a Atlas, en el backend de Render abrir **Connect → Outbound** y agregar todos los rangos mostrados a la **IP Access List** del proyecto en Atlas. Conservar también la IP local si se usa para desarrollo. El seed se ejecuta desde una terminal local contra la base elegida; no forma parte del inicio ni del despliegue automático.
+
+Referencias: [Render: Web Services](https://render.com/docs/web-services), [Render: rewrites](https://render.com/docs/redirects-rewrites), [Better Auth: GitHub](https://www.better-auth.com/docs/authentication/github).
 
 ## Verificación
 
@@ -127,7 +149,14 @@ npm run lint
 npm run test:e2e
 ```
 
-Las pruebas automatizadas usan MongoDB temporal independiente. Las instrucciones para usar el MongoDB local y Microsoft Edge están en [PELICULASYA.md](PELICULASYA.md#verificación).
+Las pruebas automatizadas usan MongoDB temporal independiente y no utilizan la base del `.env`. La primera ejecución de `mongodb-memory-server` descarga un binario de MongoDB y requiere internet. Si ya está instalado localmente, se puede usar ese ejecutable en un proceso temporal separado:
+
+```powershell
+$env:MONGOMS_SYSTEM_BINARY = 'C:/Program Files/MongoDB/Server/8.0/bin/mongod.exe'
+$env:MONGOMS_SYSTEM_BINARY_VERSION_CHECK = 'false'
+```
+
+Ajustar la ruta a la instalación del equipo. Para las pruebas de navegador, ejecutar `npx playwright install chromium` desde `frontend/` antes de `npm run test:e2e`. Como alternativa, usar Microsoft Edge instalado con `$env:PLAYWRIGHT_CHANNEL = 'msedge'`. Los puertos 3000 y 5173 deben estar libres. Estas pruebas inician backend y frontend temporales y los cierran al terminar. Las capturas de 375, 768 y 1440px se generan en `frontend/test-results/` y no se versionan.
 
 Durante el desarrollo pasaron los builds, lint, seis pruebas de integración y tres de navegador. En producción, el usuario confirmó login con GitHub, sesión tras F5, ABM del administrador y acceso denegado al usuario común.
 
