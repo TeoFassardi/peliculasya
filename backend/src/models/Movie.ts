@@ -9,7 +9,7 @@ const movieSchema = new Schema(
     durationMinutes: { type: Number, required: true, min: 1, max: 600 },
     releaseDate: { type: Date, required: true },
     available: { type: Boolean, default: true },
-    posterUrl: { type: String, default: "" },
+    posterUrl: { type: String, default: "", maxlength: 350_000 },
   },
   { timestamps: true },
 );

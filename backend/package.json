@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "seed": "tsx scripts/seed.ts",
+    "backfill:posters": "tsx scripts/backfill-posters.ts",
     "test": "tsx --test tests/*.test.ts"
   },
   "keywords": [],

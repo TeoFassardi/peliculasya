@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { posterUrlSchema } from "./poster.schema.js";
 
 export const MOVIE_GENRES = [
   "Acción",
@@ -21,12 +22,7 @@ const movieFieldsSchema = z
     durationMinutes: z.number().int().min(1).max(600),
     releaseDate: z.iso.date({ error: "Ingresá una fecha válida" }),
     available: z.boolean(),
-    posterUrl: z
-      .union([
-        z.literal(""),
-        z.url().refine((url) => new URL(url).protocol === "https:", "Usá una URL HTTPS"),
-      ])
-      .optional(),
+    posterUrl: posterUrlSchema.optional(),
   })
   .strict();
 
@@ -37,7 +33,10 @@ export const createMovieSchema = movieFieldsSchema.extend({
 // Los defaults de creación no deben modificar campos ausentes en PATCH.
 export const updateMovieSchema = movieFieldsSchema
   .partial()
-  .refine((values) => Object.keys(values).length > 0, "Indicá al menos un campo para editar");
+  .refine(
+    (values) => Object.keys(values).length > 0,
+    "Indicá al menos un campo para editar",
+  );
 
 export const listMoviesSchema = z
   .object({

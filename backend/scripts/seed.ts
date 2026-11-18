@@ -15,13 +15,20 @@ const seedEnvironment = z
     SEED_USER_PASSWORD: z.string().min(8).max(128),
   })
   .refine(
-    (values) => values.SEED_ADMIN_EMAIL.toLowerCase() !== values.SEED_USER_EMAIL.toLowerCase(),
+    (values) =>
+      values.SEED_ADMIN_EMAIL.toLowerCase() !==
+      values.SEED_USER_EMAIL.toLowerCase(),
     {
       message: "Las cuentas admin y user deben tener emails diferentes",
     },
   );
 
-async function ensureUser(name: string, email: string, password: string, role: "admin" | "user") {
+async function ensureUser(
+  name: string,
+  email: string,
+  password: string,
+  role: "admin" | "user",
+) {
   const normalizedEmail = email.trim().toLowerCase();
   const users = authMongoClient.db().collection("user");
   const existing = await users.findOne({ email: normalizedEmail });
@@ -29,13 +36,19 @@ async function ensureUser(name: string, email: string, password: string, role: "
   // Nunca promover una cuenta existente: podría pertenecer a otra persona.
   if (existing) {
     if (existing.role !== role) {
-      throw new Error(`La cuenta de prueba ${role} ya existe con otro rol. Usá un email nuevo.`);
+      throw new Error(
+        `La cuenta de prueba ${role} ya existe con otro rol. Usá un email nuevo.`,
+      );
     }
-    console.log(`[seed] Cuenta ${role} conservada; no se cambia su contraseña.`);
+    console.log(
+      `[seed] Cuenta ${role} conservada; no se cambia su contraseña.`,
+    );
     return;
   }
 
-  await auth.api.signUpEmail({ body: { name, email: normalizedEmail, password } });
+  await auth.api.signUpEmail({
+    body: { name, email: normalizedEmail, password },
+  });
   await users.updateOne({ email: normalizedEmail }, { $set: { role } });
   console.log(`[seed] Cuenta ${role} creada.`);
 }
@@ -50,11 +63,21 @@ async function seed() {
 
   await connectMongoDB();
   const config = result.data;
-  await ensureUser("Admin de prueba", config.SEED_ADMIN_EMAIL, config.SEED_ADMIN_PASSWORD, "admin");
-  await ensureUser("Usuario de prueba", config.SEED_USER_EMAIL, config.SEED_USER_PASSWORD, "user");
+  await ensureUser(
+    "Admin de prueba",
+    config.SEED_ADMIN_EMAIL,
+    config.SEED_ADMIN_PASSWORD,
+    "admin",
+  );
+  await ensureUser(
+    "Usuario de prueba",
+    config.SEED_USER_EMAIL,
+    config.SEED_USER_PASSWORD,
+    "user",
+  );
 
   for (const sample of demoMovies) {
-    const movie = createMovieSchema.parse({ ...sample, available: true, posterUrl: "" });
+    const movie = createMovieSchema.parse({ ...sample, available: true });
     await Movie.updateOne(
       { title: movie.title },
       { $setOnInsert: movie },
@@ -69,7 +92,9 @@ try {
   await seed();
 } catch (error) {
   console.error(
-    error instanceof Error ? error.message : "No se pudieron cargar los datos de prueba.",
+    error instanceof Error
+      ? error.message
+      : "No se pudieron cargar los datos de prueba.",
   );
   process.exitCode = 1;
 } finally {

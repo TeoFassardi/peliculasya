@@ -7,6 +7,7 @@ export const demoMovies = [
     genre: "Animación",
     durationMinutes: 125,
     releaseDate: "2001-07-20",
+    posterUrl: "/posters/chihiro.jpg",
   },
   {
     title: "Interestelar",
@@ -15,6 +16,7 @@ export const demoMovies = [
     genre: "Ciencia ficción",
     durationMinutes: 169,
     releaseDate: "2014-11-06",
+    posterUrl: "/posters/interestelar.jpg",
   },
   {
     title: "El gran hotel Budapest",
@@ -23,6 +25,7 @@ export const demoMovies = [
     genre: "Comedia",
     durationMinutes: 99,
     releaseDate: "2014-03-06",
+    posterUrl: "/posters/gran-hotel-budapest.jpg",
   },
   {
     title: "La llegada",
@@ -31,6 +34,7 @@ export const demoMovies = [
     genre: "Ciencia ficción",
     durationMinutes: 116,
     releaseDate: "2016-11-10",
+    posterUrl: "/posters/la-llegada.jpg",
   },
   {
     title: "El secreto de sus ojos",
@@ -39,6 +43,7 @@ export const demoMovies = [
     genre: "Suspenso",
     durationMinutes: 129,
     releaseDate: "2009-08-13",
+    posterUrl: "/posters/el-secreto-de-sus-ojos.jpg",
   },
   {
     title: "Cinema Paradiso",
@@ -47,5 +52,6 @@ export const demoMovies = [
     genre: "Drama",
     durationMinutes: 155,
     releaseDate: "1988-11-17",
+    posterUrl: "/posters/cinema-paradiso.jpg",
   },
 ];

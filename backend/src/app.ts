@@ -10,7 +10,8 @@ export const app = express();
 
 // El handler de Better Auth necesita el cuerpo original, antes de express.json().
 app.all("/api/auth/*splat", toNodeHandler(auth));
-app.use(express.json({ limit: "100kb" }));
+// Admite el afiche JPEG optimizado; cada imagen se limita además en su schema.
+app.use(express.json({ limit: "1mb" }));
 app.use("/api/movies", moviesRouter);
 app.use("/api/watchlist", watchlistRouter);
 app.get("/api/config", (_req, res) => {

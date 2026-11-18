@@ -1,5 +1,6 @@
 import { before, after, test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import request from "supertest";
 import mongoose from "mongoose";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
@@ -456,4 +457,66 @@ test("Google inicia OAuth con callback correcto sin exponer sus credenciales", a
     "http://localhost:5173/api/auth/callback/google",
   );
   assert.ok(!JSON.stringify(config.body).includes("secret"));
+});
+
+test("los afiches se guardan al crear y editar, con límites y formatos seguros", async () => {
+  const jpeg = readFileSync(
+    new URL("../../frontend/public/posters/interestelar.jpg", import.meta.url),
+  );
+  const image = `data:image/jpeg;base64,${jpeg.toString("base64")}`;
+  const created = await request(app)
+    .post("/api/movies")
+    .set("Cookie", adminCookie)
+    .send({ ...movie, posterUrl: image });
+  assert.equal(created.status, 201);
+  assert.equal(created.body.posterUrl, image);
+  const id = created.body._id;
+  const edited = await request(app)
+    .patch(`/api/movies/${id}`)
+    .set("Cookie", adminCookie)
+    .send({ title: "Con afiche conservado" });
+  assert.equal(edited.body.posterUrl, image);
+  for (const posterUrl of [
+    "https://example.com/poster.jpg",
+    "/posters/interestelar.jpg",
+    "",
+  ]) {
+    const response = await request(app)
+      .patch(`/api/movies/${id}`)
+      .set("Cookie", adminCookie)
+      .send({ posterUrl });
+    assert.equal(response.status, 200);
+    assert.equal(response.body.posterUrl, posterUrl);
+  }
+  const tooLarge = Buffer.concat([
+    jpeg.subarray(0, -2),
+    Buffer.alloc(260_000),
+    jpeg.subarray(-2),
+  ]);
+  for (const posterUrl of [
+    "http://example.com/poster.jpg",
+    "javascript:alert(1)",
+    "//example.com/a.jpg",
+    "/posters/../secret.jpg",
+    "data:image/svg+xml;base64,PHN2Zy8+",
+    "data:image/jpeg;base64,aW52YWxpZA==",
+    "data:image/jpeg;base64,@@@=",
+    `data:image/jpeg;base64,${tooLarge.toString("base64")}`,
+  ]) {
+    const response = await request(app)
+      .patch(`/api/movies/${id}`)
+      .set("Cookie", adminCookie)
+      .send({ posterUrl });
+    assert.equal(response.status, 400);
+  }
+  const oversized = await request(app)
+    .post("/api/movies")
+    .set("Cookie", adminCookie)
+    .send({ ...movie, posterUrl: "x".repeat(1_100_000) });
+  assert.equal(oversized.status, 413);
+  assert.equal(
+    (await request(app).delete(`/api/movies/${id}`).set("Cookie", adminCookie))
+      .status,
+    204,
+  );
 });
