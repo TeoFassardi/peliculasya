@@ -62,15 +62,17 @@ export function Admin() {
           <Link className="button secondary" to="/admin/usuarios">
             Usuarios y roles
           </Link>
-          <button
-            className="button"
-            onClick={() => {
-              setEditor({ movie: null });
-              setNotice("");
-            }}
-          >
-            Agregar película
-          </button>
+          {!editor?.movie && (
+            <button
+              className="button"
+              onClick={() => {
+                setEditor({ movie: null });
+                setNotice("");
+              }}
+            >
+              Agregar película
+            </button>
+          )}
         </div>
       </div>
       <p role="status" className="notice">
