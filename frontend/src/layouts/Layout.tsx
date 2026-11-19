@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, NavLink, Outlet } from "react-router";
+import { Link, NavLink, Outlet, ScrollRestoration } from "react-router";
 import { signOut, useSession } from "../lib/auth-client";
 import { ChatWidget } from "../components/ChatWidget";
 
@@ -28,7 +28,7 @@ export function Layout() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={session ? "app-shell has-assistant" : "app-shell"}>
       <a className="skip-link" href="#main-content">
         Saltar al contenido
       </a>
@@ -68,6 +68,7 @@ export function Layout() {
         <p>Historias para descubrir.</p>
       </footer>
       {session && <ChatWidget key={session.user.id} />}
+      <ScrollRestoration />
     </div>
   );
 }

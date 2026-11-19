@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { Chat } from "../pages/Chat";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+
+const Chat = lazy(() => import("../pages/Chat").then((module) => ({ default: module.Chat })));
 
 export function ChatIcon() {
   return (
@@ -20,6 +21,7 @@ export function ChatIcon() {
 
 export function ChatWidget() {
   const [open, setOpen] = useState(false);
+  const [hasOpened, setHasOpened] = useState(false);
   const launcher = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLElement>(null);
 
@@ -61,7 +63,18 @@ export function ChatWidget() {
         tabIndex={-1}
         hidden={!open}
       >
-        <Chat open={open} onClose={close} />
+        {hasOpened && (
+          <Suspense
+            fallback={
+              <div className="assistant-loading" role="status">
+                <h2 id="assistant-title">Tu asistente de cine</h2>
+                <p>Preparando el chat…</p>
+              </div>
+            }
+          >
+            <Chat open={open} onClose={close} />
+          </Suspense>
+        )}
       </section>
       <button
         ref={launcher}
@@ -70,7 +83,13 @@ export function ChatWidget() {
         aria-expanded={open}
         aria-controls="assistant-panel"
         aria-label={open ? "Cerrar asistente" : "Abrir asistente"}
-        onClick={() => (open ? close() : setOpen(true))}
+        onClick={() => {
+          if (open) close();
+          else {
+            setHasOpened(true);
+            setOpen(true);
+          }
+        }}
       >
         <ChatIcon />
         <span>Asistente</span>

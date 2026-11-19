@@ -26,7 +26,8 @@ export function Home() {
           <CatalogSearch key={search} initialSearch={search} onSearch={setSearch} />
           {result && (
             <p className="muted" aria-live="polite">
-              {result.meta.total} películas{search ? ` para “${search}”` : " en el catálogo"}
+              {result.meta.total} {result.meta.total === 1 ? "película" : "películas"}
+              {search ? ` para “${search}”` : " en el catálogo"}
             </p>
           )}
         </div>

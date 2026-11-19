@@ -235,7 +235,7 @@ El archivo render.yaml documenta ambos servicios. Para los servicios ya publicad
 3. Frontend: Root Directory frontend; Build Command npm ci --include=dev && npm run build; Publish Directory dist; NODE_VERSION 22.19.0. Nunca agregar claves de IA al frontend.
 4. Rewrites, en orden: /api/* hacia https://peliculasya-backend.onrender.com/api/* y luego /* hacia /index.html. Esto incluye POST /api/chat y mantiene la cookie de sesión en el mismo origen.
 5. Publicar el código revisado en el repositorio y desplegar backend y frontend desde el mismo commit. Agregar las variables no publica el código que aún esté solo en el equipo.
-6. Verificar /health, login, apertura y cierre del chat flotante, navegación y F5 en https://peliculasya.onrender.com. Preguntar por pendientes y por una nota de prueba. Confirmar respuesta progresiva, fuentes y persistencia al refrescar. Un backend gratuito dormido puede demorar en despertar.
+6. Verificar /health, login, apertura y cierre del chat flotante, navegación y F5 en https://peliculasya.onrender.com. Preguntar por pendientes y por una nota de prueba. Confirmar respuesta progresiva, formato legible y persistencia al refrescar. Un backend gratuito dormido puede demorar en despertar.
 7. Si hay errores, revisar Events y Logs del backend sin publicar secretos. Un 503 del chat indica claves faltantes; un evento de error puede indicar cuota o fallo del proveedor. Revertir a un deploy previo de ambos servicios si se necesita rollback.
 
 No se ha configurado ni verificado automáticamente la cuenta de Render desde esta sesión: requiere acceso a Render. El .env local no se sincroniza ni se sube al repositorio. Si se habilita una API key de Render para asistencia, guardarla localmente y nunca compartirla por chat.

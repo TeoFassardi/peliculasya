@@ -11,7 +11,9 @@ test("chat: streaming, fuentes, F5, errores y nueva conversación", async ({ pag
   await expect(panel).toBeVisible();
   await expect(page).toHaveURL("/");
   await expect(page.getByRole("heading", { name: "¿Qué vemos hoy?" })).toBeVisible();
-  expect(await page.getByLabel("Conversación", { exact: true }).evaluate(el => el.scrollTop)).toBe(0);
+  expect(
+    await page.getByLabel("Conversación", { exact: true }).evaluate((el) => el.scrollTop),
+  ).toBe(0);
   await page.screenshot({ path: "test-results/chat-welcome-desktop.png" });
   await page.setViewportSize({ width: 375, height: 812 });
   await page.screenshot({ path: "test-results/chat-welcome-mobile.png" });
@@ -27,11 +29,7 @@ test("chat: streaming, fuentes, F5, errores y nueva conversación", async ({ pag
   await page.getByLabel("Tu pregunta").fill("¿Cuántas pendientes?");
   await page.getByRole("button", { name: "Enviar", exact: true }).click();
   await expect(page.getByText("Tenés 2 pendientes.", { exact: true })).toBeVisible();
-  await expect(
-    page
-      .getByRole("navigation", { name: "Fuentes de la respuesta" })
-      .getByRole("link", { name: "Mi lista" }),
-  ).toBeVisible();
+  await expect(panel.getByRole("navigation", { name: "Fuentes de la respuesta" })).toHaveCount(0);
   await page.getByLabel("Tu pregunta").fill("Borrador conservado");
   await page.getByRole("button", { name: "Minimizar chat" }).click();
   await expect(panel).toBeHidden();
@@ -47,6 +45,7 @@ test("chat: streaming, fuentes, F5, errores y nueva conversación", async ({ pag
   await page.reload();
   await page.getByRole("button", { name: "Abrir asistente" }).click();
   await expect(page.getByText("Tenés 2 pendientes.", { exact: true })).toBeVisible();
+  await expect(panel.getByRole("navigation", { name: "Fuentes de la respuesta" })).toHaveCount(0);
   for (const width of [320, 375, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     expect(
@@ -61,12 +60,7 @@ test("chat: streaming, fuentes, F5, errores y nueva conversación", async ({ pag
   await expect(page.getByText("Tenés 2 pendientes.", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "¿Cuántas películas tengo pendientes?" }).click();
   await expect(page.getByText("Tenés 2 pendientes.", { exact: true })).toBeVisible();
-  await page
-    .getByRole("navigation", { name: "Fuentes de la respuesta" })
-    .getByRole("link", { name: "Mi lista" })
-    .click();
-  await expect(panel).toBeHidden();
-  await page.getByRole("button", { name: "Abrir asistente" }).click();
+  await expect(panel.getByRole("navigation", { name: "Fuentes de la respuesta" })).toHaveCount(0);
   await page.unroute("**/api/chat");
   await page.route("**/api/chat", (route) =>
     route.fulfill({

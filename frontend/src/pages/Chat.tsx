@@ -1,9 +1,7 @@
 ﻿import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router";
 import { useSession } from "../lib/auth-client";
 import { ChatMarkdown } from "../components/ChatMarkdown";
-type Source = { title: string; url: string };
-type Message = { role: "user" | "assistant"; content: string; sources?: Source[] };
+type Message = { role: "user" | "assistant"; content: string };
 function readMessages(key: string): Message[] {
   try {
     const value: unknown = JSON.parse(sessionStorage.getItem(key) ?? "[]");
@@ -14,17 +12,7 @@ function readMessages(key: string): Message[] {
           m && ["user", "assistant"].includes(m.role) && typeof m.content === "string",
       )
       .slice(-40)
-      .map((m) => ({
-        ...m,
-        sources: Array.isArray(m.sources)
-          ? m.sources.filter(
-              (s) =>
-                typeof s.title === "string" &&
-                typeof s.url === "string" &&
-                (s.url === "/mi-lista" || /^\/movies\/[a-f0-9]{24}$/.test(s.url)),
-            )
-          : [],
-      }));
+      .map(({ role, content }) => ({ role, content }));
   } catch {
     return [];
   }
@@ -113,10 +101,6 @@ export function Chat({ open, onClose }: { open: boolean; onClose: () => void }) 
           if (!raw) continue;
           const data = JSON.parse(raw);
           if (event === "status") setStatus(data.text);
-          if (event === "sources" && Array.isArray(data)) {
-            next[next.length - 1] = { ...next[next.length - 1], sources: data };
-            save([...next]);
-          }
           if (event === "token" && typeof data.text === "string") {
             next[next.length - 1] = {
               ...next[next.length - 1],
@@ -164,7 +148,7 @@ export function Chat({ open, onClose }: { open: boolean; onClose: () => void }) 
         </button>
       </header>
       <div className="assistant-toolbar">
-        <span>Conversación en esta pestaña</span>
+        <span>Chat en esta pestaña</span>
         <button
           type="button"
           disabled={busy || !messages.length}
@@ -238,15 +222,6 @@ export function Chat({ open, onClose }: { open: boolean; onClose: () => void }) 
                 {m.content ||
                   (busy && i === messages.length - 1 ? "Consultando…" : "Respuesta interrumpida")}
               </p>
-            )}
-            {!!m.sources?.length && (
-              <nav aria-label="Fuentes de la respuesta">
-                {m.sources.map((s) => (
-                  <Link key={s.url} to={s.url} onClick={onClose}>
-                    {s.title}
-                  </Link>
-                ))}
-              </nav>
             )}
           </article>
         ))}

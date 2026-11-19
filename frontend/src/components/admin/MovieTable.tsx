@@ -11,7 +11,13 @@ interface MovieTableProps {
 
 export function MovieTable({ movies, busy, onEdit, onDelete }: MovieTableProps) {
   return (
-    <div className="table-container">
+    <div
+      className="table-container"
+      role="region"
+      aria-label="Administración de películas, tabla desplazable"
+      tabIndex={0}
+    >
+      <p className="table-scroll-hint">Deslizá la tabla para ver el estado y las acciones.</p>
       <table>
         <caption className="sr-only">Películas del catálogo y acciones de administración</caption>
         <thead>

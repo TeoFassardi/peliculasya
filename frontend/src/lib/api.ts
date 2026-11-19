@@ -11,8 +11,11 @@ export const api = axios.create({
 export const getErrorMessage = (err: unknown): string => {
   if (typeof err === "string") return err;
   if (axios.isAxiosError(err)) {
+    if (!err.response)
+      return "No pudimos conectar con el servidor. Revisá tu conexión y volvé a intentar.";
     const error = err.response?.data?.error;
     return typeof error === "string" ? error : (error?.message ?? err.message);
   }
-  return "Error desconocido";
+  if (err instanceof Error) return err.message;
+  return "No pudimos completar la operación. Volvé a intentar.";
 };
