@@ -1,6 +1,6 @@
 # PeliculasYa — TP2 Full Stack
 
-Catálogo de películas desarrollado para Programación Web Full Stack. Los visitantes consultan el listado y el detalle; los administradores crean, editan y eliminan películas. Incluye registro, login por email, GitHub y Google, sesión persistente y roles user/admin. Cada cuenta tiene una lista privada con películas, notas y estado de visualización. Incluye búsqueda, filtros, paginación y un panel de administración de roles. GitHub y Google están configurados y su ingreso real fue confirmado en producción.
+Catálogo de películas desarrollado para Programación Web Full Stack. Los visitantes consultan el listado y el detalle; los administradores crean, editan y eliminan películas. Incluye registro, login por email, GitHub y Google, sesión persistente y roles user/admin. Cada cuenta tiene una lista privada con películas, notas y estado de visualización. Incluye búsqueda, filtros, paginación, administración de roles y un asistente de cine flotante. El estado de las verificaciones de producción se detalla al final.
 
 ## Entrega
 
@@ -12,6 +12,25 @@ Catálogo de películas desarrollado para Programación Web Full Stack. Los visi
 | Estado del backend | [/health](https://peliculasya-backend.onrender.com/health) |
 
 El backend gratuito puede tardar en responder después de un período sin uso.
+
+### Cumplimiento de la consigna
+
+| Requisito | Implementación / evidencia |
+| --- | --- |
+| Estructura del repositorio | `backend/` y `frontend/`; documentación y enlaces de entrega en este README |
+| Entidad propia | Película: siete campos de texto, número, fecha y booleano |
+| CRUD RESTful | GET, POST, PATCH y DELETE sobre `/api/movies`; tabla completa de rutas más abajo |
+| Validación y códigos HTTP | Zod en alta y edición; pruebas de 201, 400, 401, 403 y 404 |
+| Autenticación | Better Auth con email/contraseña, GitHub y MongoDB para cuentas y sesiones |
+| Roles | Registro con rol `user`; escrituras del catálogo con `authMiddleware` + `requireRole("admin")` |
+| Frontend | Listado, detalle, registro, login, logout y ABM protegido; React Hook Form + Zod y `useSession()` |
+| Deploy | Web Service y Static Site; API por `/api`; rewrites y rutas internas publicados en Render |
+| Cuentas para corregir | Admin y user indicados abajo; ingreso y roles verificados en producción el 19/11/2026 |
+| Variables y secretos | Las 17 variables están en `backend/.env.example`; `.env` ignorado y auditoría del historial sin coincidencias detectadas |
+| Historial | Commits incrementales y descriptivos; no se entrega un único commit final |
+| Opcionales | Búsqueda/paginación, lista privada por cuenta, Google y cambio de roles implementados |
+
+**Pendiente externo antes de dar por cerrada la entrega:** volver a probar el ingreso completo con GitHub en Chrome cuando Google resuelva la revisión de seguridad. El inicio OAuth y su callback de producción están verificados, pero Chrome mostró una advertencia de Safe Browsing. Se solicitó revisión en Search Console; no se dispone todavía de una resolución confirmada. No se considera este punto aprobado únicamente porque el código esté implementado.
 
 ## Entidad y arquitectura
 
@@ -49,7 +68,7 @@ El seed se puede repetir: no duplica las películas de muestra, no sobreescribe 
 Requisitos: Node.js 22.12 o superior compatible con Vite, npm, una base MongoDB Atlas o replica set local y una OAuth App de GitHub para desarrollo.
 
 1. En `backend/`, ejecutar `npm ci`.
-2. Copiar `backend/.env.example` a `backend/.env` y completar todas las variables. No subir ese archivo a Git.
+2. Copiar `backend/.env.example` a `backend/.env` y completar conexión, autenticación y las cuatro variables `SEED_`. Google y el asistente son opcionales. No subir ese archivo a Git.
 3. Usar `PORT=3000`, `NODE_ENV=development` y `BETTER_AUTH_URL=http://localhost:5173`.
 4. En `MONGODB_URI`, incluir el nombre de la base, por ejemplo `peliculasya`, además de los datos de conexión de Atlas. Better Auth y Mongoose deben usar la misma base.
 5. Generar `BETTER_AUTH_SECRET` con `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`.
@@ -76,6 +95,10 @@ El frontend no requiere `.env` ni una URL absoluta de la API. Las contraseñas s
 | `GOOGLE_CLIENT_SECRET` | Client Secret de Google; dejar ambas variables vacías si no se configura |
 | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | Cuenta admin de corrección; solo las usa el seed |
 | `SEED_USER_EMAIL`, `SEED_USER_PASSWORD` | Cuenta común de corrección; solo las usa el seed |
+| `GROQ_API_KEY` | Clave de Groq; necesaria solo para el asistente |
+| `GOOGLE_API_KEY` | Clave de Gemini para embeddings; distinta del secret de Google OAuth |
+| `GROQ_MODEL` | Modelo del asistente; por defecto `openai/gpt-oss-20b` |
+| `GEMINI_EMBEDDING_MODEL` | Modelo de embeddings; por defecto `gemini-embedding-001` |
 
 ## API
 
@@ -89,7 +112,7 @@ El frontend no requiere `.env` ni una URL absoluta de la API. Las contraseñas s
 | DELETE | `/api/movies/:id` | admin | 204, sin cuerpo |
 | POST | `/api/auth/sign-up/email` | Público | Registro con rol user |
 | POST | `/api/auth/sign-in/email` | Público | Inicio de sesión |
-| POST | `/api/auth/sign-in/social` | Público | Inicio de OAuth GitHub |
+| POST | `/api/auth/sign-in/social` | Público | Inicio de OAuth GitHub o Google |
 | GET | `/api/auth/callback/github` | Flujo OAuth | Callback administrado por Better Auth |
 | GET | `/api/auth/get-session` | Sesión opcional | Sesión actual o null |
 | POST | `/api/auth/sign-out` | Sesión | Cierre de sesión |
@@ -101,6 +124,7 @@ El frontend no requiere `.env` ni una URL absoluta de la API. Las contraseñas s
 | GET | `/api/auth/admin/list-users` | admin | Cuentas con búsqueda y paginación |
 | POST | `/api/auth/admin/set-role` | admin | Cambia el rol de otra cuenta a user o admin |
 | GET | `/api/auth/callback/google` | Flujo OAuth | Callback de Google; requiere proveedor configurado |
+| POST | `/api/chat` | user o admin | Respuesta progresiva SSE; requiere claves de Groq y Gemini |
 
 Las escrituras de películas exigen `authMiddleware` y `requireRole("admin")`. Los endpoints del plugin admin de Better Auth mantienen sus propios controles de acceso. El panel `/admin/usuarios` usa `authClient.admin.listUsers` y `authClient.admin.setRole`, pide confirmación antes de cambiar un rol e impide que un administrador se quite su propio acceso. Esta última restricción también se valida en el servidor; solo se admiten los roles user y admin.
 
@@ -173,7 +197,7 @@ Referencia: [Google: credenciales y direcciones de retorno de OAuth](https://dev
 | Web Service | `backend` | `npm ci --include=dev && npm run build` | `npm start` |
 | Static Site | `frontend` | `npm ci --include=dev && npm run build` | `dist` |
 
-Ambos usan `NODE_VERSION=22`. El backend usa `NODE_ENV=production`, las variables privadas de conexión y autenticación, y `BETTER_AUTH_URL=https://peliculasya.onrender.com`. Render asigna el puerto; `/health` permite comprobar el estado.
+Ambos usan `NODE_VERSION=22.19.0`, como indica `render.yaml`. El backend usa `NODE_ENV=production`, las variables privadas de conexión y autenticación, y `BETTER_AUTH_URL=https://peliculasya.onrender.com`. Render asigna el puerto; `/health` permite comprobar el estado.
 
 Rewrites del Static Site, en este orden:
 
@@ -210,7 +234,11 @@ $env:MONGOMS_SYSTEM_BINARY_VERSION_CHECK = 'false'
 
 Ajustar la ruta a la instalación del equipo. Para las pruebas de navegador, ejecutar `npx playwright install chromium` desde `frontend/` antes de `npm run test:e2e`. Como alternativa, usar Microsoft Edge instalado con `$env:PLAYWRIGHT_CHANNEL = 'msedge'`. Los puertos 3000 y 5173 deben estar libres. Estas pruebas inician backend y frontend temporales y los cierran al terminar. Las capturas de 375, 768 y 1440px se generan en `frontend/test-results/` y no se versionan.
 
-Durante el desarrollo pasaron los builds, lint, diez pruebas de integración y siete de navegador. Las pruebas adicionales cubren el aislamiento de listas entre cuentas, validación de notas, duplicados, autorización y cambio de roles, el inicio de Google OAuth con callback local, y la creación, reemplazo, eliminación y validación de afiches. En producción, el usuario confirmó login con GitHub, sesión tras F5, ABM del administrador, acceso denegado al usuario común y, tras configurar Google, el ingreso completo con una cuenta real de ese proveedor.
+En la revisión del 19 de noviembre de 2026 pasaron diez pruebas de integración del backend y once pruebas de navegador, además de los builds de ambos proyectos y el lint del frontend. Cubren CRUD y códigos HTTP, validación, registro y sesiones, permisos, aislamiento de listas, cambio de roles, inicio de Google OAuth, afiches, chat y Markdown, recuperación de errores de conexión y navegación. Las correcciones finales de móvil se volvieron a comprobar con las pruebas de chat y de pulido.
+
+Ese día se verificaron directamente en producción: `/health`, ingreso por email de las dos cuentas de corrección y sus roles, lectura de la sesión con la misma cookie y logout. También se comprobó que GitHub y Google inician OAuth hacia sus dominios oficiales con el callback correcto, y que `/login`, `/mi-lista` y `/admin` sirven el frontend al abrirse directamente. Esta comprobación no sustituye completar la autorización con una cuenta real del proveedor; el bloqueo de Chrome durante la vuelta de GitHub sigue pendiente de resolución externa.
+
+Se revisaron 387 versiones de archivos del historial alcanzable de Git. No se encontraron coincidencias con los secretos locales comprobados ni con los patrones buscados de tokens de GitHub, claves de Google/Groq, URI autenticada de MongoDB y claves privadas. No hay archivos `.env` reales registrados en ese historial y el `.env` local está ignorado. Es una comprobación acotada a esos valores y patrones, no una garantía universal de ausencia de cualquier dato sensible.
 
 El 18 de noviembre de 2026 se verificó además con navegador automático en producción: catálogo y búsqueda, detalle con F5, registro con rol user, sesión tras F5 y logout, cuentas de prueba, rechazo 403 de escrituras para user, ABM admin, validación, cancelar sin guardar y confirmación de borrado. Se comprobó `/api` bajo el origen del frontend, paginación de la API y ausencia de desborde horizontal a 375, 768 y 1440px. Los registros temporales de verificación se eliminaron.
 
@@ -220,11 +248,13 @@ No se deben versionar archivos `.env` ni credenciales de infraestructura. Las co
 
 ## Asistente (LangChain y RAG)
 
-Desde el botón flotante Asistente, cada cuenta consulta cat�logo, conteos de su lista y fragmentos sem�nticos de sinopsis y notas. Usa Groq para respuestas y Gemini para embeddings, persistidos en MongoDB y buscados con MemoryVectorStore. Configurar GROQ_API_KEY y GOOGLE_API_KEY en backend/.env y Render; nunca en el frontend. Los modelos son configurables con GROQ_MODEL y GEMINI_EMBEDDING_MODEL. Las cuotas gratuitas dependen de las cuentas; no habilitar facturaci�n si se busca evitar cargos.
+Desde el botón flotante Asistente, cada cuenta consulta catálogo, conteos de su lista y fragmentos semánticos de sinopsis y notas. Usa Groq para respuestas y Gemini para embeddings, persistidos en MongoDB y buscados con MemoryVectorStore. Configurar GROQ_API_KEY y GOOGLE_API_KEY en backend/.env y Render; nunca en el frontend. Los modelos son configurables con GROQ_MODEL y GEMINI_EMBEDDING_MODEL. Las cuotas gratuitas dependen de las cuentas; no habilitar facturación si se busca evitar cargos.
 
-La conversaci�n vive en sessionStorage por cuenta: sobrevive al refrescar y se limpia con Nueva conversaci�n o logout. Restaurar una pesta�a puede recuperar su almacenamiento. Los proveedores reciben textos necesarios; Google puede usar contenido del nivel gratuito para mejorar productos. Usar notas de prueba sin datos sensibles.
+El panel se abre sin abandonar la página, conserva el borrador al minimizarlo y carga su código al usarlo por primera vez. En móvil utiliza un botón compacto. Las respuestas admiten Markdown seguro; las tablas anchas se desplazan dentro del mensaje. No se muestra una lista adicional de fuentes debajo de las respuestas.
 
-Demo: iniciar sesi�n, preguntar cu�ntas pel�culas hay pendientes y luego buscar una nota por significado. Las llamadas reales requieren ambas claves. El endpoint POST /api/chat admite message e history (m�ximo 20 mensajes). La b�squeda en memoria es para cat�logos peque�os. Esta versi�n usa una cadena RAG de lectura, sin acciones de escritura ni selecci�n din�mica de herramientas.
+La conversación vive en sessionStorage por cuenta: sobrevive al refrescar y se limpia con Nueva conversación o logout. Restaurar una pestaña puede recuperar su almacenamiento. Los proveedores reciben textos necesarios; Google puede usar contenido del nivel gratuito para mejorar productos. Usar notas de prueba sin datos sensibles.
+
+Demo: iniciar sesión, preguntar cuántas películas hay pendientes y luego buscar una nota por significado. Las llamadas reales requieren ambas claves. El endpoint POST /api/chat admite message e history (máximo 20 mensajes). La búsqueda en memoria es para catálogos pequeños. Esta versión usa una cadena RAG de lectura, sin acciones de escritura ni selección dinámica de herramientas.
 
 ### Activar el asistente en los servicios existentes de Render
 
