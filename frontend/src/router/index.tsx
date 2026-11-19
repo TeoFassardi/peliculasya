@@ -1,4 +1,3 @@
-import { Chat } from "../pages/Chat";
 import { createBrowserRouter, Navigate } from "react-router";
 import { Layout } from "../layouts/Layout";
 import { ProtectedRoute } from "./ProtectedRoute";
@@ -25,7 +24,7 @@ export const router = createBrowserRouter([
       {
         element: <ProtectedRoute />,
         children: [
-          { path: "chat", element: <Chat /> },
+          { path: "chat", element: <Navigate to="/" replace /> },
           {
             path: "mi-lista",
             element: (

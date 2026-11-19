@@ -220,7 +220,7 @@ No se deben versionar archivos `.env` ni credenciales de infraestructura. Las co
 
 ## Asistente (LangChain y RAG)
 
-En /chat, cada cuenta consulta cat醠ogo, conteos de su lista y fragmentos sem醤ticos de sinopsis y notas. Usa Groq para respuestas y Gemini para embeddings, persistidos en MongoDB y buscados con MemoryVectorStore. Configurar GROQ_API_KEY y GOOGLE_API_KEY en backend/.env y Render; nunca en el frontend. Los modelos son configurables con GROQ_MODEL y GEMINI_EMBEDDING_MODEL. Las cuotas gratuitas dependen de las cuentas; no habilitar facturaci髇 si se busca evitar cargos.
+Desde el bot贸n flotante Asistente, cada cuenta consulta cat醠ogo, conteos de su lista y fragmentos sem醤ticos de sinopsis y notas. Usa Groq para respuestas y Gemini para embeddings, persistidos en MongoDB y buscados con MemoryVectorStore. Configurar GROQ_API_KEY y GOOGLE_API_KEY en backend/.env y Render; nunca en el frontend. Los modelos son configurables con GROQ_MODEL y GEMINI_EMBEDDING_MODEL. Las cuotas gratuitas dependen de las cuentas; no habilitar facturaci髇 si se busca evitar cargos.
 
 La conversaci髇 vive en sessionStorage por cuenta: sobrevive al refrescar y se limpia con Nueva conversaci髇 o logout. Restaurar una pesta馻 puede recuperar su almacenamiento. Los proveedores reciben textos necesarios; Google puede usar contenido del nivel gratuito para mejorar productos. Usar notas de prueba sin datos sensibles.
 
@@ -235,7 +235,7 @@ El archivo render.yaml documenta ambos servicios. Para los servicios ya publicad
 3. Frontend: Root Directory frontend; Build Command npm ci --include=dev && npm run build; Publish Directory dist; NODE_VERSION 22.19.0. Nunca agregar claves de IA al frontend.
 4. Rewrites, en orden: /api/* hacia https://peliculasya-backend.onrender.com/api/* y luego /* hacia /index.html. Esto incluye POST /api/chat y mantiene la cookie de sesi贸n en el mismo origen.
 5. Publicar el c贸digo revisado en el repositorio y desplegar backend y frontend desde el mismo commit. Agregar las variables no publica el c贸digo que a煤n est茅 solo en el equipo.
-6. Verificar /health, login, /chat y F5 en https://peliculasya.onrender.com. Preguntar por pendientes y por una nota de prueba. Confirmar respuesta progresiva, fuentes y persistencia al refrescar. Un backend gratuito dormido puede demorar en despertar.
+6. Verificar /health, login, apertura y cierre del chat flotante, navegaci贸n y F5 en https://peliculasya.onrender.com. Preguntar por pendientes y por una nota de prueba. Confirmar respuesta progresiva, fuentes y persistencia al refrescar. Un backend gratuito dormido puede demorar en despertar.
 7. Si hay errores, revisar Events y Logs del backend sin publicar secretos. Un 503 del chat indica claves faltantes; un evento de error puede indicar cuota o fallo del proveedor. Revertir a un deploy previo de ambos servicios si se necesita rollback.
 
 No se ha configurado ni verificado autom谩ticamente la cuenta de Render desde esta sesi贸n: requiere acceso a Render. El .env local no se sincroniza ni se sube al repositorio. Si se habilita una API key de Render para asistencia, guardarla localmente y nunca compartirla por chat.

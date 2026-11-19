@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router";
 import { signOut, useSession } from "../lib/auth-client";
+import { ChatWidget } from "../components/ChatWidget";
 
 export function Layout() {
   const { data: session, isPending } = useSession();
@@ -16,7 +17,8 @@ export function Layout() {
         setLogoutError("No pudimos cerrar la sesión. Volvé a intentar.");
         return;
       }
-      for (const key of Object.keys(sessionStorage)) if (key.startsWith("peliculasya-chat:")) sessionStorage.removeItem(key);
+      for (const key of Object.keys(sessionStorage))
+        if (key.startsWith("peliculasya-chat:")) sessionStorage.removeItem(key);
       window.location.replace("/");
     } catch {
       setLogoutError("No pudimos conectar. Volvé a intentar.");
@@ -41,7 +43,6 @@ export function Layout() {
               Catálogo
             </NavLink>
             {session && <NavLink to="/mi-lista">Mi lista</NavLink>}
-            {session && <NavLink to="/chat">Asistente</NavLink>}
             {session?.user.role === "admin" && <NavLink to="/admin">Administrar</NavLink>}
             {!isPending &&
               (session ? (
@@ -66,6 +67,7 @@ export function Layout() {
         <span>PeliculasYa</span>
         <p>Historias para descubrir.</p>
       </footer>
+      {session && <ChatWidget key={session.user.id} />}
     </div>
   );
 }
