@@ -1,6 +1,7 @@
 ﻿import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router";
 import { useSession } from "../lib/auth-client";
+import { ChatMarkdown } from "../components/ChatMarkdown";
 type Source = { title: string; url: string };
 type Message = { role: "user" | "assistant"; content: string; sources?: Source[] };
 function readMessages(key: string): Message[] {
@@ -229,11 +230,15 @@ export function Chat({ open, onClose }: { open: boolean; onClose: () => void }) 
         )}
         {messages.map((m, i) => (
           <article className={`chat-message chat-message-${m.role}`} key={i}>
-            <strong>{m.role === "user" ? "Vos" : "Asistente"}</strong>
-            <p>
-              {m.content ||
-                (busy && i === messages.length - 1 ? "Consultando…" : "Respuesta interrumpida")}
-            </p>
+            <span className="chat-speaker">{m.role === "user" ? "Vos" : "Asistente"}</span>
+            {m.role === "assistant" && m.content ? (
+              <ChatMarkdown content={m.content} onNavigate={onClose} />
+            ) : (
+              <p>
+                {m.content ||
+                  (busy && i === messages.length - 1 ? "Consultando…" : "Respuesta interrumpida")}
+              </p>
+            )}
             {!!m.sources?.length && (
               <nav aria-label="Fuentes de la respuesta">
                 {m.sources.map((s) => (
