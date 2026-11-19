@@ -1,3 +1,4 @@
+import { chatRouter } from "./routes/chat.routes.js";
 import express from "express";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./lib/auth.js";
@@ -12,6 +13,7 @@ export const app = express();
 app.all("/api/auth/*splat", toNodeHandler(auth));
 // Admite el afiche JPEG optimizado; cada imagen se limita además en su schema.
 app.use(express.json({ limit: "1mb" }));
+app.use("/api/chat", chatRouter);
 app.use("/api/movies", moviesRouter);
 app.use("/api/watchlist", watchlistRouter);
 app.get("/api/config", (_req, res) => {

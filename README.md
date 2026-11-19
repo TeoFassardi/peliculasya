@@ -217,3 +217,25 @@ El 18 de noviembre de 2026 se verific√≥ adem√°s con navegador autom√°tico en pro
 Despu√©s de publicar los opcionales se verificaron en producci√≥n: listado de cuentas autorizado para admin y rechazado para user, protecci√≥n contra quitarse el rol propio, y creaci√≥n, edici√≥n y filtrado de registros privados. Otra cuenta admin no pudo consultar ni editar el registro del propietario. Se eliminaron las pel√≠culas, registros y sesiones temporales de esa comprobaci√≥n. Google est√° habilitado y su callback apunta a `https://peliculasya.onrender.com/api/auth/callback/google`.
 
 No se deben versionar archivos `.env` ni credenciales de infraestructura. Las contrase√±as publicadas arriba corresponden solamente a cuentas de demostraci√≥n para la correcci√≥n.
+
+## Asistente (LangChain y RAG)
+
+En /chat, cada cuenta consulta cat·logo, conteos de su lista y fragmentos sem·nticos de sinopsis y notas. Usa Groq para respuestas y Gemini para embeddings, persistidos en MongoDB y buscados con MemoryVectorStore. Configurar GROQ_API_KEY y GOOGLE_API_KEY en backend/.env y Render; nunca en el frontend. Los modelos son configurables con GROQ_MODEL y GEMINI_EMBEDDING_MODEL. Las cuotas gratuitas dependen de las cuentas; no habilitar facturaciÛn si se busca evitar cargos.
+
+La conversaciÛn vive en sessionStorage por cuenta: sobrevive al refrescar y se limpia con Nueva conversaciÛn o logout. Restaurar una pestaÒa puede recuperar su almacenamiento. Los proveedores reciben textos necesarios; Google puede usar contenido del nivel gratuito para mejorar productos. Usar notas de prueba sin datos sensibles.
+
+Demo: iniciar sesiÛn, preguntar cu·ntas pelÌculas hay pendientes y luego buscar una nota por significado. Las llamadas reales requieren ambas claves. El endpoint POST /api/chat admite message e history (m·ximo 20 mensajes). La b˙squeda en memoria es para cat·logos pequeÒos. Esta versiÛn usa una cadena RAG de lectura, sin acciones de escritura ni selecciÛn din·mica de herramientas.
+
+### Activar el asistente en los servicios existentes de Render
+
+El archivo render.yaml documenta ambos servicios. Para los servicios ya publicados, conservarlos y actualizar su configuraci√≥n; no crear un Blueprint nuevo que duplique servicios.
+
+1. Backend peliculasya-backend ‚Üí Environment: agregar GROQ_API_KEY y GOOGLE_API_KEY con los mismos valores verificados localmente. GOOGLE_API_KEY es la clave de Gemini; no es GOOGLE_CLIENT_SECRET del login. No borrar variables existentes. Modelos opcionales: GROQ_MODEL=openai/gpt-oss-20b y GEMINI_EMBEDDING_MODEL=gemini-embedding-001.
+2. Verificar backend: Root Directory backend; Build Command npm ci --include=dev && npm run build; Start Command npm start; NODE_VERSION 22.19.0; NODE_ENV production; Health Check /health. Conservar BETTER_AUTH_URL=https://peliculasya.onrender.com y los secretos de autenticaci√≥n actuales.
+3. Frontend: Root Directory frontend; Build Command npm ci --include=dev && npm run build; Publish Directory dist; NODE_VERSION 22.19.0. Nunca agregar claves de IA al frontend.
+4. Rewrites, en orden: /api/* hacia https://peliculasya-backend.onrender.com/api/* y luego /* hacia /index.html. Esto incluye POST /api/chat y mantiene la cookie de sesi√≥n en el mismo origen.
+5. Publicar el c√≥digo revisado en el repositorio y desplegar backend y frontend desde el mismo commit. Agregar las variables no publica el c√≥digo que a√∫n est√© solo en el equipo.
+6. Verificar /health, login, /chat y F5 en https://peliculasya.onrender.com. Preguntar por pendientes y por una nota de prueba. Confirmar respuesta progresiva, fuentes y persistencia al refrescar. Un backend gratuito dormido puede demorar en despertar.
+7. Si hay errores, revisar Events y Logs del backend sin publicar secretos. Un 503 del chat indica claves faltantes; un evento de error puede indicar cuota o fallo del proveedor. Revertir a un deploy previo de ambos servicios si se necesita rollback.
+
+No se ha configurado ni verificado autom√°ticamente la cuenta de Render desde esta sesi√≥n: requiere acceso a Render. El .env local no se sincroniza ni se sube al repositorio. Si se habilita una API key de Render para asistencia, guardarla localmente y nunca compartirla por chat.
